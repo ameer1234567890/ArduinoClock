@@ -31,6 +31,9 @@ void loop() {
     if (time > 1200 && militaryTime == false) {
       time = time - 1200;
     }
+    if (time == 0 && militaryTime == false) {
+      time = 1200;
+    }
     time += tm.Minute;
   }
 
