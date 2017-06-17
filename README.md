@@ -4,6 +4,7 @@ A clock in Arduino with a Seven Segment and an RTC
 #### Pinout for Seven Segment
 ```
 Arduino Uno  -  Seven Segment
+-----------------------------
 D2           -  Digit 1
 D3           -  Digit 2
 D4           -  Digit 3
@@ -21,6 +22,7 @@ D13          -  Decimal Point
 #### Pinout for RTC
 ```
 Arduino Uno  -  RTC
+-------------------
 5V           -  VCC
 GND          -  GND
 SCL / A5     -  SCL
