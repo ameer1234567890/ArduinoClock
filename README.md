@@ -1,5 +1,5 @@
 # ArduinoClock
-A clock in Arduino with a Seven Segment and an RTC
+A clock in Arduino with a Seven Segment and an RTC and ticking sound
 
 #### Pinout for Seven Segment
 ```
@@ -27,6 +27,14 @@ Arduino Uno  -  RTC
 GND          -  GND
 SCL / A5     -  SCL
 SDA / A4     -  SDA
+```
+
+#### Pinout for Buzzer (Ticking sound)
+```
+Arduino Uno  -  Buzzer
+-------------------
+A0           -  VCC
+GND          -  GND
 ```
 
 #### Libraries used
