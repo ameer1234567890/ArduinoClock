@@ -4,6 +4,9 @@
 #include <TimeLib.h>
 #include <Wire.h>
 
+#define TICK_PIN A0
+unsigned long lastTime = 0;
+
 // Create an instance of the object
 SevSeg sevseg;
 bool militaryTime = false; // true for 24 hour clock
@@ -46,4 +49,8 @@ void loop() {
   //Produce an output on the display
   sevseg.refreshDisplay();
   sevseg.setNumber(time, dot);
+  if (millis() - lastTime >= 1000 || !lastTime) {
+    lastTime = millis();
+    tone(TICK_PIN,1000,2);
+  }
 }
