@@ -41,3 +41,8 @@ GND          -  GND
 * Time: https://github.com/PaulStoffregen/Time
 * DS1307RTC: https://github.com/PaulStoffregen/DS1307RTC
 * SevSeg: https://github.com/DeanIsMe/SevSeg
+
+#### Project Progress
+* Initial Clock: https://web.facebook.com/ameer1234567890/posts/10210875516896895
+* Ticking Sound: https://web.facebook.com/ameer1234567890/posts/10211233068995474
+* Clock Hanging at Wall: https://web.facebook.com/ameer1234567890/posts/10211710798218406
