@@ -1,0 +1,25 @@
+sudo: false
+language: bash
+os:
+  - linux
+env:
+  matrix:
+    - BOARD="arduino:avr:uno" IDE_VERSION=1.8.5
+    - BOARD="arduino:avr:nano:cpu=atmega328" IDE_VERSION=1.8.5
+before_install:
+  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
+  - sleep 3
+  - export DISPLAY=:1.0
+install:
+  - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
+  - tar xf arduino-$IDE_VERSION-linux64.tar.xz
+  - mv arduino-$IDE_VERSION $HOME/arduino_ide
+  - export PATH="$HOME/arduino_ide:$PATH"
+  - which arduino
+  - mkdir -p $HOME/Arduino/libraries
+  - git clone https://github.com/PaulStoffregen/Time $HOME/Arduino/libraries/Time
+  - git clone https://github.com/PaulStoffregen/DS1307RTC $HOME/Arduino/libraries/DS1307RTC
+  - git clone https://github.com/DeanIsMe/SevSeg $HOME/Arduino/libraries/SevSeg
+  - arduino --board $BOARD --save-prefs
+script:
+  - arduino --verify $TRAVIS_BUILD_DIR/ArduinoClock.ino
