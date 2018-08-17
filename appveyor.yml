@@ -1,0 +1,19 @@
+platform:
+  - x86
+  - x64
+environment:
+  matrix:
+    - BOARD: 'arduino:avr:uno'
+      IDE_VERSION: '1.8.5'
+    - BOARD: 'arduino:avr:nano:cpu=atmega328'
+      IDE_VERSION: '1.8.5'
+install:
+  - ps: (New-Object Net.WebClient).DownloadFile("http://downloads.arduino.cc/arduino-$env:IDE_VERSION-windows.zip", "C:\projects\arduino.zip");
+  - ps: Expand-Archive "C:\projects\arduino.zip" -dest "C:\projects\arduino\";
+build_script:
+  - cmd: cd C:\projects\arduino\arduino-%IDE_VERSION%
+  - git clone https://github.com/PaulStoffregen/Time libraries/Time
+  - git clone https://github.com/PaulStoffregen/DS1307RTC libraries/DS1307RTC
+  - git clone https://github.com/DeanIsMe/SevSeg libraries/SevSeg
+  - cmd: arduino_debug.exe --board %BOARD% --save-prefs
+  - cmd: arduino_debug.exe --verify C:\projects\ArduinoClock\ArduinoClock.ino

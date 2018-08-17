@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ameer1234567890/ArduinoClock.svg?branch=master)](https://travis-ci.org/ameer1234567890/ArduinoClock)
+[![Build Status](https://travis-ci.org/ameer1234567890/ArduinoClock.svg?branch=master)](https://travis-ci.org/ameer1234567890/ArduinoClock) [![Build status](https://ci.appveyor.com/api/projects/status/m8t5kg7jovf9r3ih/branch/master?svg=true)](https://ci.appveyor.com/project/ameer1234567890/arduinoclock/branch/master)
 
 # ArduinoClock
 A clock in Arduino with a Seven Segment and an RTC and ticking sound
