@@ -5,7 +5,7 @@ A clock in Arduino with a Seven Segment and an RTC and ticking sound
 
 #### Pinout for Seven Segment
 ```
-Arduino Uno  -  Seven Segment
+Arduino Nano  -  Seven Segment
 -----------------------------
 D2           -  Digit 1
 D3           -  Digit 2
@@ -21,9 +21,15 @@ D12          -  Segment G
 D13          -  Decimal Point
 ```
 
+Seven Segment's pins are as below:
+```
+Top Row:    1 A F  2 3 B
+Bottom Row: E D DP C G 4
+```
+
 #### Pinout for RTC
 ```
-Arduino Uno  -  RTC
+Arduino Nano  -  RTC
 -------------------
 5V           -  VCC
 GND          -  GND
@@ -33,7 +39,7 @@ SDA / A4     -  SDA
 
 #### Pinout for Buzzer (Ticking sound)
 ```
-Arduino Uno  -  Buzzer
+Arduino Nano  -  Buzzer
 -------------------
 A0           -  VCC
 GND          -  GND

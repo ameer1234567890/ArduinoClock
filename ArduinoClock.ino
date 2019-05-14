@@ -51,6 +51,6 @@ void loop() {
   sevseg.setNumber(time, dot);
   if (millis() - lastTime >= 1000 || !lastTime) {
     lastTime = millis();
-    tone(TICK_PIN,1000,2);
+    tone(TICK_PIN, 1000, 2);
   }
 }
