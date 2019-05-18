@@ -1,56 +1,191 @@
-#include <SevSeg.h>
-#include <DS1307RTC.h>
-#include <Time.h>
-#include <TimeLib.h>
 #include <Wire.h>
+#include "RTClib.h"
+#include <ShiftDisplay.h>
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+#include "Secrets.h"
 
-#define TICK_PIN A0
-unsigned long lastTime = 0;
+/*
+Secrets.h file should contain data as below:
+char ssid[] = "xxxxxxxx"; // your network SSID (name)
+char pass[] = "xxxxxxxx"; // your network password
+*/
 
-// Create an instance of the object
-SevSeg sevseg;
+/* Configurable variables */
+#define TICK_PIN D5
+#define SYNC_PIN D0
+#define LATCH_PIN D7
+#define CLOCK_PIN D8
+#define DATA_PIN D6
+#define DISPLAY_TYPE COMMON_ANODE // either COMMON_ANODE or COMMON_CATHODE
+#define DISPLAY_SIZE 4 // number of digits
+String timezone = "+5"; // local timezone
 bool militaryTime = false; // true for 24 hour clock
+bool leadingZeros = true; // true for leading zeros
+int NTP_TIMEOUT = 5000; // NTP request timeout interval
+int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
+
+/* Do not change unless you know what you are doing */
+unsigned long lastTime = 0;
+int ntpCount = 0;
+int wifiCount = 0;
+unsigned int localPort = 2390;
+IPAddress timeServerIP;
+const char* ntpServerName = "pool.ntp.org";
+const int NTP_PACKET_SIZE = 48;
+byte packetBuffer[NTP_PACKET_SIZE];
+
+WiFiUDP udp;
+ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
+RTC_DS1307 rtc;
+
 
 void setup() {
-  byte numDigits = 4;
-  byte digitPins[] = {2, 3, 4, 5};
-  byte segmentPins[] = {6, 7, 8, 9, 10, 11, 12, 13};
-  bool resistorsOnSegments = false; // 'false' means resistors are on digit pins
-  byte hardwareConfig = COMMON_ANODE; // See README.md for options
-  bool updateWithDelays = false; // Default. Recommended
-  bool leadingZeros = true; // Use 'true' if you'd like to keep the leading zeros
-  
-  sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments, updateWithDelays, leadingZeros);
-  sevseg.setBrightness(90);
+  pinMode(TICK_PIN, OUTPUT);
+  pinMode(SYNC_PIN, INPUT_PULLUP);
+  if (!rtc.begin()) {
+    display.set("ERR1");
+    while (true) {
+      display.show();
+    }
+  }
+
+  if (!rtc.isrunning()) {
+    display.set("ERR2");
+    while (true) {
+      display.show();
+    }
+  }
 }
 
+
 void loop() {
-  tmElements_t tm;
-  int time;
-  int dot;
+  String timeString;
+  DateTime now = rtc.now();
 
-  if (RTC.read(tm)) {
-    time = tm.Hour * 100;
-    if (time > 1200 && militaryTime == false) {
-      time = time - 1200;
-    }
-    if (time == 0 && militaryTime == false) {
-      time = 1200;
-    }
-    time += tm.Minute;
+  int hour = now.hour();
+  if (hour > 12 && !militaryTime) {
+    hour = hour - 12;
   }
-
-  if ((tm.Second % 2) == 0) {
-    dot = 4;
+  if (hour == 0 && !militaryTime) {
+    hour = 12;
+  }
+  if (hour < 10 && leadingZeros) {
+    timeString = "0" + String(hour);
+  } else if (hour < 10 && !leadingZeros) {
+    timeString = " " + String(hour);
   } else {
-    dot = 2;
+    timeString = String(hour);
   }
 
-  //Produce an output on the display
-  sevseg.refreshDisplay();
-  sevseg.setNumber(time, dot);
+  int minute = now.minute();
+  if (minute < 10 && leadingZeros) {
+    timeString += "0" + String(minute);
+  } else if (minute < 10 && !leadingZeros) {
+    timeString += " " + String(minute);
+  } else {
+    timeString += String(minute);
+  }
+
+  display.set(timeString);
+  if ((now.second() % 2) == 0) {
+    display.setDot(1, true);
+  }
+  display.show();
+
   if (millis() - lastTime >= 1000 || !lastTime) {
     lastTime = millis();
     tone(TICK_PIN, 1000, 2);
   }
+
+  if (digitalRead(SYNC_PIN) == LOW) {
+    syncntp();
+    pinMode(SYNC_PIN, OUTPUT);
+    digitalWrite(SYNC_PIN, HIGH);
+    pinMode(SYNC_PIN, INPUT_PULLUP);
+  }
+}
+
+
+void syncntp() {
+  ntpCount++;
+  if (ntpCount > NTP_TIMEOUT) {
+    ntpCount = 0;
+    int i = 0;
+    while (i < 1000) {
+      i++;
+      display.set("ERR3");
+      display.show();
+    }
+  } else {
+    WiFi.begin(ssid, pass);
+    while (WiFi.status() != WL_CONNECTED) {
+      wifiCount++;
+      if (wifiCount > WIFI_TIMEOUT) {
+        wifiCount = 0;
+        int i = 0;
+        while (i < 1000) {
+          i++;
+          display.set("ERR4");
+          display.show();
+        }
+        return;
+      } else {
+        display.set("WIFI");
+        display.show();
+      }
+    }
+    udp.begin(localPort);
+    WiFi.hostByName(ntpServerName, timeServerIP);
+    sendNTPpacket(timeServerIP);
+    int i = 0;
+    while (i < 1000) {
+      i++;
+      display.set("SYNC");
+      display.show();
+    }
+    int cb = udp.parsePacket();
+    if (!cb) {
+      int i = 0;
+      while (i < 1000) {
+        i++;
+        display.set("ERR5");
+        display.show();
+      }
+    } else {
+      udp.read(packetBuffer, NTP_PACKET_SIZE);
+      unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+      unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+      unsigned long secsSince1900 = highWord << 16 | lowWord;
+      int localTime;
+      if (timezone.startsWith("+")) {
+        localTime = secsSince1900 + (timezone.toInt() * 60 * 60);
+      } else {
+        localTime = secsSince1900 - (timezone.toInt() * 60 * 60);
+      }
+      rtc.adjust(DateTime(localTime));
+      int i = 0;
+      while (i < 1000) {
+        i++;
+        display.set("DONE");
+        display.show();
+      }
+    }
+  }
+}
+
+
+unsigned long sendNTPpacket(IPAddress& address) {
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  packetBuffer[0] = 0b11100011;
+  packetBuffer[1] = 0;
+  packetBuffer[2] = 6;
+  packetBuffer[3] = 0xEC;
+  packetBuffer[12] = 49;
+  packetBuffer[13] = 0x4E;
+  packetBuffer[14] = 49;
+  packetBuffer[15] = 52;
+  udp.beginPacket(address, 123);
+  udp.write(packetBuffer, NTP_PACKET_SIZE);
+  udp.endPacket();
 }
