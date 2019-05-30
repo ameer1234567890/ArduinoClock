@@ -10,6 +10,12 @@ Secrets.h file should contain data as below:
 char ssid[] = "xxxxxxxx"; // your network SSID (name)
 char pass[] = "xxxxxxxx"; // your network password
 */
+#ifndef STASSID
+#define STASSID "your-ssid"
+#define STAPSK  "your-password"
+#endif
+const char* ssid = STASSID;
+const char* pass = STAPSK;
 
 /* Configurable variables */
 #define TICK_PIN D5

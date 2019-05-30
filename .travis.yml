@@ -1,25 +1,21 @@
-sudo: false
-language: bash
-os:
-  - linux
+language: c
+cache:
+  directories:
+    - ~/arduino_ide
+    - ~/.arduino15/packages/
+git:
+  depth: false
+  quiet: true
 env:
-  matrix:
-    - BOARD="arduino:avr:uno" IDE_VERSION=1.8.5
-    - BOARD="arduino:avr:nano:cpu=atmega328" IDE_VERSION=1.8.5
+  global:
+     - ARDUINO_IDE_VERSION="1.8.9"
+     - PRETTYNAME="ArduinoClock"
+
 before_install:
-  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
-  - sleep 3
-  - export DISPLAY=:1.0
+   - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
+
 install:
-  - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
-  - tar xf arduino-$IDE_VERSION-linux64.tar.xz
-  - mv arduino-$IDE_VERSION $HOME/arduino_ide
-  - export PATH="$HOME/arduino_ide:$PATH"
-  - which arduino
-  - mkdir -p $HOME/Arduino/libraries
-  - git clone https://github.com/PaulStoffregen/Time $HOME/Arduino/libraries/Time
-  - git clone https://github.com/PaulStoffregen/DS1307RTC $HOME/Arduino/libraries/DS1307RTC
-  - git clone https://github.com/DeanIsMe/SevSeg $HOME/Arduino/libraries/SevSeg
-  - arduino --board $BOARD --save-prefs
+   - arduino --install-library "RTClib","ShiftDisplay"
+
 script:
-  - arduino --verify $TRAVIS_BUILD_DIR/ArduinoClock.ino
+   - build_main_platforms
