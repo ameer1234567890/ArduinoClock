@@ -18,4 +18,4 @@ install:
    - arduino --install-library "RTClib","ShiftDisplay"
 
 script:
-   - build_main_platforms
+  - build_platform esp8266
