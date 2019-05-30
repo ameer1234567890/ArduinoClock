@@ -12,7 +12,7 @@ install:
   - arduino --install-boards esp8266:esp8266
   - arduino --board esp8266:esp8266:d1_mini:CpuFrequency=80,FlashSize=4M1M --save-prefs
   - arduino --pref "compiler.warning_level=all" --save-prefs
-  - arduino --install-library "RTClib"
-  - arduino --install-library "ShiftDisplay"
+  - arduino --install-library "RTClib:1.2.0"
+  - arduino --install-library "ShiftDisplay:3.6.1"
 script:
   - arduino -v --verbose-build --verify ./ArduinoClock.ino
