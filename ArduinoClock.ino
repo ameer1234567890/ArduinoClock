@@ -21,32 +21,32 @@ const char* pass = STAPSK;
 /* Configurable variables */
 #define TICK_PIN D5
 #define SYNC_PIN D0
+#define DATA_PIN D6
 #define LATCH_PIN D7
 #define CLOCK_PIN D8
-#define DATA_PIN D6
-#define DISPLAY_TYPE COMMON_ANODE // either COMMON_ANODE or COMMON_CATHODE
 #define DISPLAY_SIZE 4 // number of digits
-String timezone = "+5"; // local timezone
-bool militaryTime = false; // true for 24 hour clock
-bool leadingZeros = true; // true for leading zeros
-int NTP_TIMEOUT = 5000; // NTP request timeout interval
-int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
-int SERVER_PORT = 8888; // Port number for server to initiate sync remotely
+#define DISPLAY_TYPE COMMON_ANODE // either COMMON_ANODE or COMMON_CATHODE
+const String TIMEZONE = "+5"; // local timezone
+const int NTP_TIMEOUT = 5000; // NTP request timeout interval
+const int SERVER_PORT = 8888; // Port number for server to initiate sync remotely
+const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
+const bool LEADING_ZEROS = true; // true for leading zeros
+const bool MILITARY_TIME = false; // true for 24 hour clock
 
 /* Do not change unless you know what you are doing */
-unsigned long lastTime = 0;
 int ntpCount = 0;
 int wifiCount = 0;
-unsigned int localPort = 2390;
-IPAddress timeServerIP;
-const char* ntpServerName = "pool.ntp.org";
+unsigned long lastTime = 0;
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
+const unsigned int localPort = 2390;
+const char* ntpServerName = "pool.ntp.org";
 
 WiFiUDP udp;
+RTC_DS1307 rtc;
+IPAddress timeServerIP;
 ESP8266WebServer server(SERVER_PORT);
 ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
-RTC_DS1307 rtc;
 
 
 void setup() {
@@ -75,6 +75,7 @@ void setup() {
   });
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting clock");
+    delay(1000);
     ESP.restart();
   });
   server.begin();
@@ -86,24 +87,24 @@ void loop() {
   DateTime now = rtc.now();
 
   int hour = now.hour();
-  if (hour > 12 && !militaryTime) {
+  if (hour > 12 && !MILITARY_TIME) {
     hour = hour - 12;
   }
-  if (hour == 0 && !militaryTime) {
+  if (hour == 0 && !MILITARY_TIME) {
     hour = 12;
   }
-  if (hour < 10 && leadingZeros) {
+  if (hour < 10 && LEADING_ZEROS) {
     timeString = "0" + String(hour);
-  } else if (hour < 10 && !leadingZeros) {
+  } else if (hour < 10 && !LEADING_ZEROS) {
     timeString = " " + String(hour);
   } else {
     timeString = String(hour);
   }
 
   int minute = now.minute();
-  if (minute < 10 && leadingZeros) {
+  if (minute < 10 && LEADING_ZEROS) {
     timeString += "0" + String(minute);
-  } else if (minute < 10 && !leadingZeros) {
+  } else if (minute < 10 && !LEADING_ZEROS) {
     timeString += " " + String(minute);
   } else {
     timeString += String(minute);
@@ -182,10 +183,10 @@ void syncntp() {
       unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
       unsigned long secsSince1900 = highWord << 16 | lowWord;
       int localTime;
-      if (timezone.startsWith("+")) {
-        localTime = secsSince1900 + (timezone.toInt() * 60 * 60);
+      if (TIMEZONE.startsWith("+")) {
+        localTime = secsSince1900 + (TIMEZONE.toInt() * 60 * 60);
       } else {
-        localTime = secsSince1900 - (timezone.toInt() * 60 * 60);
+        localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
       }
       rtc.adjust(DateTime(localTime));
       int i = 0;
