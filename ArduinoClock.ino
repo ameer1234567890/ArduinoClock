@@ -1,14 +1,15 @@
 #include <Wire.h>
-#include "RTClib.h"
+#include <RTClib.h>
 #include <ShiftDisplay.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
+#include <ESP8266WebServer.h>
 #include "Secrets.h"
 
 /*
 Secrets.h file should contain data as below:
-char ssid[] = "xxxxxxxx"; // your network SSID (name)
-char pass[] = "xxxxxxxx"; // your network password
+#define STASSID "your-ssid" // your network SSID (name)
+#define STAPSK "your-password" // your network password
 */
 #ifndef STASSID
 #define STASSID "your-ssid"
@@ -30,6 +31,7 @@ bool militaryTime = false; // true for 24 hour clock
 bool leadingZeros = true; // true for leading zeros
 int NTP_TIMEOUT = 5000; // NTP request timeout interval
 int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
+int SERVER_PORT = 8888; // Port number for server to initiate sync remotely
 
 /* Do not change unless you know what you are doing */
 unsigned long lastTime = 0;
@@ -42,6 +44,7 @@ const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 
 WiFiUDP udp;
+ESP8266WebServer server(SERVER_PORT);
 ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
 RTC_DS1307 rtc;
 
@@ -62,6 +65,19 @@ void setup() {
       display.show();
     }
   }
+
+  server.on("/", []() {
+    server.send(400, "text/plain", "Bad request");
+  });
+  server.on("/sync", []() {
+    server.send(200, "text/plain", "Sync started");
+    syncntp();
+  });
+  server.on("/reboot", []() {
+    server.send(200, "text/plain", "Rebooting clock");
+    ESP.restart();
+  });
+  server.begin();
 }
 
 
@@ -110,6 +126,8 @@ void loop() {
     digitalWrite(SYNC_PIN, HIGH);
     pinMode(SYNC_PIN, INPUT_PULLUP);
   }
+
+  server.handleClient();
 }
 
 
