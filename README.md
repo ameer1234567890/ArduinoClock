@@ -80,6 +80,13 @@ D0             -  Terminal 1
 GND            -  Terminal 2
 ```
 
+#### Schematic
+![Schematic](./ArduinoClock_schem.svg)
+
+#### Breadboard Layout
+* This is how I have setup ArduinoClock on a breadboard.
+![Breadboard Layout](./ArduinoClock_bb.svg)
+
 #### Libraries used
 * RTClib: https://github.com/adafruit/RTClib
 * ShiftDisplay: https://miguelpynto.github.io/ShiftDisplay/
