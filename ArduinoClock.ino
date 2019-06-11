@@ -4,6 +4,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
+#include <ArduinoOTA.h>
 #include "Secrets.h"
 
 /*
@@ -11,12 +12,14 @@ Secrets.h file should contain data as below:
 #define STASSID "your-ssid" // your network SSID (name)
 #define STAPSK "your-password" // your network password
 */
-#ifndef STASSID
-#define STASSID "your-ssid"
-#define STAPSK  "your-password"
+#ifndef STA_SSID
+#define STA_SSID "your-ssid" // your network SSID (name)
+#define STA_PSK  "your-password" // your network password
+#define OTA_HOSTNAME "ArduinoClock" // desired hostname for OTA
 #endif
-const char* ssid = STASSID;
-const char* pass = STAPSK;
+
+const char* ssid = STA_SSID;
+const char* pass = STA_PSK;
 
 /* Configurable variables */
 #define TICK_PIN D5
@@ -79,6 +82,9 @@ void setup() {
     ESP.restart();
   });
   server.begin();
+
+  ArduinoOTA.setHostname(OTA_HOSTNAME);
+  ArduinoOTA.begin();
 }
 
 
@@ -129,6 +135,8 @@ void loop() {
   }
 
   server.handleClient();
+
+  ArduinoOTA.handle();
 }
 
 
@@ -143,6 +151,7 @@ void syncntp() {
       display.show();
     }
   } else {
+    WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, pass);
     while (WiFi.status() != WL_CONNECTED) {
       wifiCount++;
