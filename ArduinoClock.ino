@@ -35,14 +35,20 @@ const int SERVER_PORT = 8888; // Port number for server to initiate sync remotel
 const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
+const bool HOURLY_CHIME = true; // true for a chime at the start of every hour
 
 /* Do not change unless you know what you are doing */
 int ntpCount = 0;
 int wifiCount = 0;
+int chimeCount = 0;
+bool chimed = false;
+const int numChimes = 4;
 unsigned long lastTime = 0;
-const int NTP_PACKET_SIZE = 48;
-byte packetBuffer[NTP_PACKET_SIZE];
+const int ntpPacketSize = 48;
+unsigned long previousMillis = 0;
+byte packetBuffer[ntpPacketSize];
 const unsigned int localPort = 2390;
+const long intervalBetweenChimes = 200;
 const char* ntpServerName = "pool.ntp.org";
 
 WiFiUDP udp;
@@ -116,6 +122,23 @@ void loop() {
     timeString += String(minute);
   }
 
+  if (minute == 0) {
+    if (HOURLY_CHIME && !chimed) {
+      if (chimeCount < numChimes) {
+        unsigned long currentMillis = millis();
+        if (currentMillis - previousMillis >= intervalBetweenChimes) {
+          previousMillis = currentMillis;
+          chimeCount++;
+          tone(TICK_PIN, 1000, 70);
+        }
+      } else {
+        chimed = true;
+      }
+    }
+  } else {
+    chimed = false;
+  }
+
   display.set(timeString);
   if ((now.second() % 2) == 0) {
     display.setDot(1, true);
@@ -187,7 +210,7 @@ void syncntp() {
         display.show();
       }
     } else {
-      udp.read(packetBuffer, NTP_PACKET_SIZE);
+      udp.read(packetBuffer, ntpPacketSize);
       unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
       unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
       unsigned long secsSince1900 = highWord << 16 | lowWord;
@@ -210,7 +233,7 @@ void syncntp() {
 
 
 unsigned long sendNTPpacket(IPAddress& address) {
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  memset(packetBuffer, 0, ntpPacketSize);
   packetBuffer[0] = 0b11100011;
   packetBuffer[1] = 0;
   packetBuffer[2] = 6;
@@ -220,6 +243,6 @@ unsigned long sendNTPpacket(IPAddress& address) {
   packetBuffer[14] = 49;
   packetBuffer[15] = 52;
   udp.beginPacket(address, 123);
-  udp.write(packetBuffer, NTP_PACKET_SIZE);
+  udp.write(packetBuffer, ntpPacketSize);
   udp.endPacket();
 }
