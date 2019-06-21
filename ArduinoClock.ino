@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <RTClib.h>
+#include <EEPROM.h>
 #include <ShiftDisplay.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
@@ -29,19 +30,23 @@ const char* pass = STA_PSK;
 #define CLOCK_PIN D8
 #define DISPLAY_SIZE 4 // number of digits
 #define DISPLAY_TYPE COMMON_ANODE // either COMMON_ANODE or COMMON_CATHODE
+const int ALARM_BEEPS = 10; // number of beeps during alarm
 const String TIMEZONE = "+5"; // local timezone
 const int NTP_TIMEOUT = 5000; // NTP request timeout interval
 const int SERVER_PORT = 8888; // Port number for server to initiate sync remotely
 const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
+const bool HOURLY_CHIME = true; // true for a chime at the start of every hour
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
-const bool HOURLY_CHIME = true; // true for a chime at the start of every hour
 
 /* Do not change unless you know what you are doing */
 int ntpCount = 0;
+String timeString;
 int wifiCount = 0;
 int chimeCount = 0;
+uint eepromAddr = 0;
 bool chimed = false;
+bool alarmed = false;
 const int numChimes = 4;
 unsigned long lastTime = 0;
 const int ntpPacketSize = 48;
@@ -50,6 +55,14 @@ byte packetBuffer[ntpPacketSize];
 const unsigned int localPort = 2390;
 const long intervalBetweenChimes = 200;
 const char* ntpServerName = "pool.ntp.org";
+struct { 
+  uint hour = 99;
+  uint minute = 99;
+} alarmData;
+struct { 
+  uint hour = 99;
+  uint minute = 99;
+} alarmDataOld;
 
 WiFiUDP udp;
 RTC_DS1307 rtc;
@@ -80,6 +93,9 @@ void setup() {
       <a href=\"/sync\">/sync</a><br>\
       <a href=\"/reboot\">/reboot</a><br>\
       <a href=\"/countdown?secs=10\">/countdown?secs=10</a><br>\
+      <a href=\"/setalarm?hour=14&minute=44\">/setalarm?hour=14&minute=44</a><br>\
+      <a href=\"/showalarm\">/showalarm</a><br>\
+      <a href=\"/cancelalarm\">/cancelalarm</a><br>\
     ");
   });
   server.on("/sync", []() {
@@ -92,6 +108,9 @@ void setup() {
     ESP.restart();
   });
   server.on("/countdown", countdown);
+  server.on("/setalarm", setAlarm);
+  server.on("/showalarm", showAlarm);
+  server.on("/cancelalarm", cancelAlarm);
   server.begin();
 
   ArduinoOTA.setHostname(OTA_HOSTNAME);
@@ -100,14 +119,26 @@ void setup() {
     display.set(String(progress / (total / 100)), ALIGN_RIGHT);
     display.show();
   });
+
+  EEPROM.begin(512);
+  EEPROM.get(eepromAddr, alarmData);
 }
 
 
 void loop() {
-  String timeString;
   DateTime now = rtc.now();
-
   int hour = now.hour();
+  int minute = now.minute();
+
+  if (hour == alarmData.hour && minute == alarmData.minute) {
+    if (!alarmed) {
+      doAlarm();
+      alarmed = true;
+    }
+  } else {
+    alarmed = false;
+  }
+
   if (hour > 12 && !MILITARY_TIME) {
     hour = hour - 12;
   }
@@ -122,7 +153,6 @@ void loop() {
     timeString = String(hour);
   }
 
-  int minute = now.minute();
   if (minute < 10 && LEADING_ZEROS) {
     timeString += "0" + String(minute);
   } else if (minute < 10 && !LEADING_ZEROS) {
@@ -251,4 +281,120 @@ void countdown() {
     tone(TICK_PIN, 1000, 1000);
     display.show(3000);
   }
+}
+
+
+void setAlarm() {
+  if (server.arg("hour") == "" || server.arg("minute") == "") {
+    server.send(400, "text/plain", "Alarm time not specified!");
+  } else {
+    int alarmHour = server.arg("hour").toInt();
+    int alarmMinute = server.arg("minute").toInt();
+    alarmData.hour = alarmHour;
+    alarmData.minute = alarmMinute;
+    EEPROM.get(eepromAddr, alarmDataOld);
+    if (alarmDataOld.hour == alarmData.hour && alarmDataOld.minute == alarmData.minute) {
+      server.send(200, "text/plain", "Alarm already set for " + String(alarmData.hour) + ":" + String(alarmData.minute));
+    } else {
+      EEPROM.put(eepromAddr, alarmData);
+      EEPROM.commit();
+      server.send(200, "text/plain", "Alarm set for " + String(alarmData.hour) + ":" + String(alarmData.minute));
+    }
+    if (alarmData.hour < 10 && LEADING_ZEROS) {
+      timeString = "0" + String(alarmData.hour);
+    } else if (alarmData.hour < 10 && !LEADING_ZEROS) {
+      timeString = " " + String(alarmData.hour);
+    } else {
+      timeString = String(alarmData.hour);
+    }
+    if (alarmData.minute < 10 && LEADING_ZEROS) {
+      timeString += "0" + String(alarmData.minute);
+    } else if (alarmData.minute < 10 && !LEADING_ZEROS) {
+      timeString += " " + String(alarmData.minute);
+    } else {
+      timeString += String(alarmData.minute);
+    }
+    display.set("ALRM");
+    display.show(1000);
+    display.set(timeString);
+    display.setDot(1, true);
+    display.show(3000);
+    display.set("DONE");
+    display.show(1000);
+  }
+}
+
+
+void showAlarm() {
+  if (EEPROM.read(eepromAddr) == 9) {
+    server.send(200, "text/plain", "No alarm set");
+    display.set("ALRM");
+    display.show(1000);
+    display.set("NONE");
+    display.show(3000);
+  } else {
+    EEPROM.get(eepromAddr, alarmData);
+    server.send(200, "text/plain", "Alarm is set for " + String(alarmData.hour) + ":" + String(alarmData.minute));
+    if (alarmData.hour < 10 && LEADING_ZEROS) {
+      timeString = "0" + String(alarmData.hour);
+    } else if (alarmData.hour < 10 && !LEADING_ZEROS) {
+      timeString = " " + String(alarmData.hour);
+    } else {
+      timeString = String(alarmData.hour);
+    }
+    if (alarmData.minute < 10 && LEADING_ZEROS) {
+      timeString += "0" + String(alarmData.minute);
+    } else if (alarmData.minute < 10 && !LEADING_ZEROS) {
+      timeString += " " + String(alarmData.minute);
+    } else {
+      timeString += String(alarmData.minute);
+    }
+    display.set("ALRM");
+    display.show(1000);
+    display.set(timeString);
+    display.setDot(1, true);
+    display.show(3000);
+    display.set("DONE");
+    display.show(1000);
+  }
+}
+
+
+void cancelAlarm() {
+  if (EEPROM.read(eepromAddr) == 9) {
+    server.send(200, "text/plain", "No alarm set");
+    display.set("ALRM");
+    display.show(1000);
+    display.set("NONE");
+    display.show(3000);
+  } else {
+    for (int i = 0; i < 512; i++) {
+      EEPROM.write(i, 9);
+    }
+    EEPROM.commit();
+    server.send(200, "text/plain", "Alarm cancelled");
+    display.set("ALRM");
+    display.show(1000);
+    display.set("CXLD");
+    display.show(3000);
+  }
+}
+
+
+void doAlarm() {
+  for (int i = 0; i < ALARM_BEEPS; i++) {
+    if (digitalRead(SYNC_PIN) == LOW) {
+      break;
+    }
+    display.set("ALRM");
+    display.show(1000);
+    display.set(timeString);
+    display.setDot(1, true);
+    tone(TICK_PIN, 1000, 1000);
+    display.show(1000);
+  }
+  pinMode(SYNC_PIN, OUTPUT);
+  digitalWrite(SYNC_PIN, HIGH);
+  pinMode(SYNC_PIN, INPUT_PULLUP);
+  delay(3000);
 }
