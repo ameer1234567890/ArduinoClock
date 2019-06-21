@@ -87,6 +87,7 @@ void setup() {
     delay(1000);
     ESP.restart();
   });
+  server.on("/countdown", countdown);
   server.begin();
 
   ArduinoOTA.setHostname(OTA_HOSTNAME);
@@ -249,4 +250,21 @@ unsigned long sendNTPpacket(IPAddress& address) {
   udp.beginPacket(address, 123);
   udp.write(packetBuffer, ntpPacketSize);
   udp.endPacket();
+}
+
+
+void countdown() {
+  if (server.arg("secs") == "") {
+    server.send(400, "text/plain", "Countdown period not specified!");
+  } else {
+    server.send(200, "text/plain", "Countdown started");
+    for (int secs = server.arg("secs").toInt(); secs > 0; secs--) {
+      display.set(secs, ALIGN_RIGHT);
+      tone(TICK_PIN, 1000, 2);
+      display.show(1000);
+    }
+    display.set("GO", ALIGN_RIGHT);
+    tone(TICK_PIN, 1000, 1000);
+    display.show(3000);
+  }
 }
