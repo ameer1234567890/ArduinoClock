@@ -93,7 +93,7 @@ void setup() {
   ArduinoOTA.setHostname(OTA_HOSTNAME);
   ArduinoOTA.begin();
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    display.set(String(progress / (total / 100)));
+    display.set(String(progress / (total / 100)), ALIGN_RIGHT);
     display.show();
   });
 }
