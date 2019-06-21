@@ -76,7 +76,11 @@ void setup() {
   }
 
   server.on("/", []() {
-    server.send(400, "text/plain", "Bad request");
+    server.send(200, "text/html", "\
+      <a href=\"/sync\">/sync</a><br>\
+      <a href=\"/reboot\">/reboot</a><br>\
+      <a href=\"/countdown?secs=10\">/countdown?secs=10</a><br>\
+    ");
   });
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
