@@ -172,12 +172,8 @@ void syncntp() {
   ntpCount++;
   if (ntpCount > NTP_TIMEOUT) {
     ntpCount = 0;
-    int i = 0;
-    while (i < 1000) {
-      i++;
-      display.set("ERR3");
-      display.show();
-    }
+    display.set("ERR3");
+    display.show(3000);
   } else {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, pass);
@@ -185,12 +181,8 @@ void syncntp() {
       wifiCount++;
       if (wifiCount > WIFI_TIMEOUT) {
         wifiCount = 0;
-        int i = 0;
-        while (i < 1000) {
-          i++;
-          display.set("ERR4");
-          display.show();
-        }
+        display.set("ERR4");
+        display.show(3000);
         return;
       } else {
         display.set("WIFI");
@@ -200,20 +192,12 @@ void syncntp() {
     udp.begin(localPort);
     WiFi.hostByName(ntpServerName, timeServerIP);
     sendNTPpacket(timeServerIP);
-    int i = 0;
-    while (i < 1000) {
-      i++;
-      display.set("SYNC");
-      display.show();
-    }
+    display.set("SYNC");
+    display.show(3000);
     int cb = udp.parsePacket();
     if (!cb) {
-      int i = 0;
-      while (i < 1000) {
-        i++;
-        display.set("ERR5");
-        display.show();
-      }
+      display.set("ERR5");
+      display.show(3000);
     } else {
       udp.read(packetBuffer, ntpPacketSize);
       unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
@@ -226,12 +210,8 @@ void syncntp() {
         localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
       }
       rtc.adjust(DateTime(localTime));
-      int i = 0;
-      while (i < 1000) {
-        i++;
-        display.set("DONE");
-        display.show();
-      }
+      display.set("DONE");
+      display.show(3000);
     }
   }
 }
