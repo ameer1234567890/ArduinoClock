@@ -56,12 +56,14 @@ const unsigned int localPort = 2390;
 const long intervalBetweenChimes = 200;
 const char* ntpServerName = "pool.ntp.org";
 struct { 
-  uint hour = 99;
-  uint minute = 99;
+  uint set = 1;
+  uint hour = 0;
+  uint minute = 0;
 } alarmData;
 struct { 
-  uint hour = 99;
-  uint minute = 99;
+  uint set = 1;
+  uint hour = 0;
+  uint minute = 0;
 } alarmDataOld;
 
 WiFiUDP udp;
@@ -290,6 +292,7 @@ void setAlarm() {
   } else {
     int alarmHour = server.arg("hour").toInt();
     int alarmMinute = server.arg("minute").toInt();
+    alarmData.set = 1;
     alarmData.hour = alarmHour;
     alarmData.minute = alarmMinute;
     EEPROM.get(eepromAddr, alarmDataOld);
@@ -326,7 +329,7 @@ void setAlarm() {
 
 
 void showAlarm() {
-  if (EEPROM.read(eepromAddr) == 9) {
+  if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
     display.show(1000);
@@ -361,7 +364,7 @@ void showAlarm() {
 
 
 void cancelAlarm() {
-  if (EEPROM.read(eepromAddr) == 9) {
+  if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
     display.show(1000);
@@ -369,7 +372,7 @@ void cancelAlarm() {
     display.show(3000);
   } else {
     for (int i = 0; i < 512; i++) {
-      EEPROM.write(i, 9);
+      EEPROM.write(i, 0);
     }
     EEPROM.commit();
     server.send(200, "text/plain", "Alarm cancelled");
