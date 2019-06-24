@@ -56,12 +56,12 @@ const unsigned int localPort = 2390;
 const long intervalBetweenChimes = 200;
 const char* ntpServerName = "pool.ntp.org";
 struct { 
-  uint set = 1;
+  uint set = 0;
   uint hour = 0;
   uint minute = 0;
 } alarmData;
 struct { 
-  uint set = 1;
+  uint set = 0;
   uint hour = 0;
   uint minute = 0;
 } alarmDataOld;
@@ -132,7 +132,7 @@ void loop() {
   int hour = now.hour();
   int minute = now.minute();
 
-  if (hour == alarmData.hour && minute == alarmData.minute) {
+  if (alarmData.set == 1 && hour == alarmData.hour && minute == alarmData.minute) {
     if (!alarmed) {
       doAlarm();
       alarmed = true;
