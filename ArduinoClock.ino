@@ -112,11 +112,11 @@ void setup() {
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
     syncntp();
-    log("system: Clock sync routine run for request from" + server.client().remoteIP().toString());
+    log("system: Clock sync routine run for request from " + server.client().remoteIP().toString());
   });
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting clock");
-    log("system: Rebooting upon request from" + server.client().remoteIP().toString());
+    log("system: Rebooting upon request from " + server.client().remoteIP().toString());
     delay(1000);
     ESP.restart();
   });
