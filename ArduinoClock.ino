@@ -216,7 +216,9 @@ void loop() {
 
 
 void log(String msg) {
-  logMsg = logMsg + "[MILLIS: " + millis() + "] [FREE_MEM: " + String(system_get_free_heap_size()) + "] " + msg + "\n";
+  logMsg = logMsg + "[MILLIS: " + millis() + "] ";
+  logMsg = logMsg + "[FREE_MEM: " + String(system_get_free_heap_size()) + "] ";
+  logMsg = logMsg + msg + "\n";
 }
 
 
