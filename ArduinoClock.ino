@@ -6,6 +6,7 @@
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoOTA.h>
+#include "user_interface.h"
 #include "Secrets.h"
 
 /*
@@ -40,6 +41,7 @@ const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
 
 /* Do not change unless you know what you are doing */
+String logMsg;
 int ntpCount = 0;
 String timeString;
 int wifiCount = 0;
@@ -74,6 +76,7 @@ ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE)
 
 
 void setup() {
+  log("system: startup");
   pinMode(TICK_PIN, OUTPUT);
   pinMode(SYNC_PIN, INPUT_PULLUP);
   if (!rtc.begin()) {
@@ -92,6 +95,7 @@ void setup() {
 
   server.on("/", []() {
     server.send(200, "text/html", "\
+      <a href=\"/log\">/log</a><br>\
       <a href=\"/sync\">/sync</a><br>\
       <a href=\"/reboot\">/reboot</a><br>\
       <a href=\"/countdown?secs=10\">/countdown?secs=10</a><br>\
@@ -99,13 +103,20 @@ void setup() {
       <a href=\"/showalarm\">/showalarm</a><br>\
       <a href=\"/cancelalarm\">/cancelalarm</a><br>\
     ");
+    log("server: Served / to " + server.client().remoteIP().toString());
+  });
+  server.on("/log", []() {
+    server.send(200, "text/plain", logMsg);
+    log("server: Served /log to " + server.client().remoteIP().toString());
   });
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
     syncntp();
+    log("system: Clock sync routine run for request from" + server.client().remoteIP().toString());
   });
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting clock");
+    log("system: Rebooting upon request from" + server.client().remoteIP().toString());
     delay(1000);
     ESP.restart();
   });
@@ -204,6 +215,11 @@ void loop() {
 }
 
 
+void log(String msg) {
+  logMsg = logMsg + "[MILLIS: " + millis() + "] [FREE_MEM: " + String(system_get_free_heap_size()) + "] " + msg + "\n";
+}
+
+
 void syncntp() {
   ntpCount++;
   if (ntpCount > NTP_TIMEOUT) {
@@ -270,6 +286,7 @@ unsigned long sendNTPpacket(IPAddress& address) {
 
 
 void countdown() {
+  log("countdown: started countdown upon request from " + server.client().remoteIP().toString());
   if (server.arg("secs") == "") {
     server.send(400, "text/plain", "Countdown period not specified!");
   } else {
@@ -283,10 +300,12 @@ void countdown() {
     tone(TICK_PIN, 1000, 1000);
     display.show(3000);
   }
+  log("countdown: completed");
 }
 
 
 void setAlarm() {
+  log("alarm: started setAlarm upon request from " + server.client().remoteIP().toString());
   if (server.arg("hour") == "" || server.arg("minute") == "") {
     server.send(400, "text/plain", "Alarm time not specified!");
   } else {
@@ -325,10 +344,12 @@ void setAlarm() {
     display.set("DONE");
     display.show(1000);
   }
+  log("alarm: completed setAlarm");
 }
 
 
 void showAlarm() {
+  log("alarm: started showAlarm upon request from " + server.client().remoteIP().toString());
   if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
@@ -360,10 +381,12 @@ void showAlarm() {
     display.set("DONE");
     display.show(1000);
   }
+  log("alarm: completed showAlarm");
 }
 
 
 void cancelAlarm() {
+  log("alarm: started cancelAlarm upon request from " + server.client().remoteIP().toString());
   if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
@@ -381,12 +404,15 @@ void cancelAlarm() {
     display.set("CXLD");
     display.show(3000);
   }
+  log("alarm: completed cancelAlarm");
 }
 
 
 void doAlarm() {
+  log("alarm: started doAlarm");
   for (int i = 0; i < ALARM_BEEPS; i++) {
     if (digitalRead(SYNC_PIN) == LOW) {
+      log("alarm: alarm dismissed");
       break;
     }
     display.set("ALRM");
@@ -400,4 +426,5 @@ void doAlarm() {
   digitalWrite(SYNC_PIN, HIGH);
   pinMode(SYNC_PIN, INPUT_PULLUP);
   delay(3000);
+  log("alarm: completed doAlarm");
 }
