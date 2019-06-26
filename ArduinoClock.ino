@@ -103,20 +103,20 @@ void setup() {
       <a href=\"/showalarm\">/showalarm</a><br>\
       <a href=\"/cancelalarm\">/cancelalarm</a><br>\
     ");
-    log("server: Served / to " + server.client().remoteIP().toString());
+    log("server: served / to " + server.client().remoteIP().toString());
   });
   server.on("/log", []() {
     server.send(200, "text/plain", logMsg);
-    log("server: Served /log to " + server.client().remoteIP().toString());
+    log("server: served /log to " + server.client().remoteIP().toString());
   });
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
     syncntp();
-    log("system: Clock sync routine run for request from " + server.client().remoteIP().toString());
+    log("system: clock sync routine run for request from " + server.client().remoteIP().toString());
   });
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting clock");
-    log("system: Rebooting upon request from " + server.client().remoteIP().toString());
+    log("system: rebooting upon request from " + server.client().remoteIP().toString());
     delay(1000);
     ESP.restart();
   });
@@ -142,6 +142,7 @@ void loop() {
   DateTime now = rtc.now();
   int hour = now.hour();
   int minute = now.minute();
+  int second = now.second();
 
   if (alarmData.set == 1 && hour == alarmData.hour && minute == alarmData.minute) {
     if (!alarmed) {
@@ -226,6 +227,7 @@ void syncntp() {
   ntpCount++;
   if (ntpCount > NTP_TIMEOUT) {
     ntpCount = 0;
+    log("ntp: ntp timeout");
     display.set("ERR3");
     display.show(3000);
   } else {
@@ -235,6 +237,7 @@ void syncntp() {
       wifiCount++;
       if (wifiCount > WIFI_TIMEOUT) {
         wifiCount = 0;
+        log("ntp: wifi timeout");
         display.set("ERR4");
         display.show(3000);
         return;
@@ -250,6 +253,7 @@ void syncntp() {
     display.show(3000);
     int cb = udp.parsePacket();
     if (!cb) {
+      log("ntp: packet empty");
       display.set("ERR5");
       display.show(3000);
     } else {
@@ -264,6 +268,7 @@ void syncntp() {
         localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
       }
       rtc.adjust(DateTime(localTime));
+      log("ntp: clock updated");
       display.set("DONE");
       display.show(3000);
     }
