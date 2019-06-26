@@ -43,7 +43,6 @@ const bool MILITARY_TIME = false; // true for 24 hour clock
 
 /* Do not change unless you know what you are doing */
 String logMsg;
-int ntpCount = 0;
 String timeString;
 int wifiCount = 0;
 int chimeCount = 0;
@@ -249,54 +248,46 @@ void log(String msg) {
 
 void syncntp() {
   log("ntp: clock update started");
-  ntpCount++;
-  if (ntpCount > NTP_TIMEOUT) {
-    ntpCount = 0;
-    log("ntp: ntp timeout");
-    display.set("ERR3");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, pass);
+  while (WiFi.status() != WL_CONNECTED) {
+    wifiCount++;
+    if (wifiCount > WIFI_TIMEOUT) {
+      wifiCount = 0;
+      log("ntp: wifi timeout");
+      display.set("ERR4");
+      display.show(3000);
+      return;
+    } else {
+      display.set("WIFI");
+      display.show();
+    }
+  }
+  udp.begin(localPort);
+  WiFi.hostByName(ntpServerName, timeServerIP);
+  sendNTPpacket(timeServerIP);
+  display.set("SYNC");
+  display.show(3000);
+  int cb = udp.parsePacket();
+  if (!cb) {
+    log("ntp: packet empty");
+    display.set("ERR5");
     display.show(3000);
   } else {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, pass);
-    while (WiFi.status() != WL_CONNECTED) {
-      wifiCount++;
-      if (wifiCount > WIFI_TIMEOUT) {
-        wifiCount = 0;
-        log("ntp: wifi timeout");
-        display.set("ERR4");
-        display.show(3000);
-        return;
-      } else {
-        display.set("WIFI");
-        display.show();
-      }
-    }
-    udp.begin(localPort);
-    WiFi.hostByName(ntpServerName, timeServerIP);
-    sendNTPpacket(timeServerIP);
-    display.set("SYNC");
-    display.show(3000);
-    int cb = udp.parsePacket();
-    if (!cb) {
-      log("ntp: packet empty");
-      display.set("ERR5");
-      display.show(3000);
+    udp.read(packetBuffer, ntpPacketSize);
+    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+    unsigned long secsSince1900 = highWord << 16 | lowWord;
+    int localTime;
+    if (TIMEZONE.startsWith("+")) {
+      localTime = secsSince1900 + (TIMEZONE.toInt() * 60 * 60);
     } else {
-      udp.read(packetBuffer, ntpPacketSize);
-      unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
-      unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
-      unsigned long secsSince1900 = highWord << 16 | lowWord;
-      int localTime;
-      if (TIMEZONE.startsWith("+")) {
-        localTime = secsSince1900 + (TIMEZONE.toInt() * 60 * 60);
-      } else {
-        localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
-      }
-      rtc.adjust(DateTime(localTime));
-      log("ntp: clock updated");
-      display.set("DONE");
-      display.show(3000);
+      localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
     }
+    rtc.adjust(DateTime(localTime));
+    log("ntp: clock updated");
+    display.set("DONE");
+    display.show(3000);
   }
 }
 
