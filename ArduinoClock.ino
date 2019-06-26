@@ -52,6 +52,7 @@ bool chimed = false;
 bool alarmed = false;
 const int numChimes = 4;
 unsigned long lastTime = 0;
+String logTime = "00:00:00";
 const int ntpPacketSize = 48;
 unsigned long previousMillis = 0;
 byte packetBuffer[ntpPacketSize];
@@ -154,6 +155,22 @@ void loop() {
     alarmed = false;
   }
 
+  if (hour < 10) {
+    logTime = "0" + String(hour) + ":";
+  } else {
+    logTime = String(hour) + ":";
+  }
+  if (minute < 10) {
+    logTime += "0" + String(minute) + ":";
+  } else {
+    logTime += String(minute) + ":";
+  }
+  if (second < 10) {
+    logTime += "0" + String(second);
+  } else {
+    logTime += String(second);
+  }
+
   if (hour > 12 && !MILITARY_TIME) {
     hour = hour - 12;
   }
@@ -223,7 +240,8 @@ void loop() {
 
 
 void log(String msg) {
-  logMsg = logMsg + "[MILLIS: " + millis() + "] ";
+  //logMsg = logMsg + "[MILLIS: " + millis() + "] ";
+  logMsg = logMsg + "[" + logTime + "] ";
   logMsg = logMsg + "[FREE_MEM: " + String(system_get_free_heap_size()) + "] ";
   logMsg = logMsg + msg + "\n";
 }
