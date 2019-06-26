@@ -248,6 +248,7 @@ void log(String msg) {
 
 
 void syncntp() {
+  log("ntp: clock update started");
   ntpCount++;
   if (ntpCount > NTP_TIMEOUT) {
     ntpCount = 0;
