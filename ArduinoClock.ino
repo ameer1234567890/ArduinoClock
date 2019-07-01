@@ -77,7 +77,7 @@ ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE)
 
 
 void setup() {
-  log("system: startup");
+  log("I/system: startup");
   pinMode(TICK_PIN, OUTPUT);
   pinMode(SYNC_PIN, INPUT_PULLUP);
   if (!rtc.begin()) {
@@ -104,20 +104,20 @@ void setup() {
       <a href=\"/showalarm\">/showalarm</a><br>\
       <a href=\"/cancelalarm\">/cancelalarm</a><br>\
     ");
-    log("server: served / to " + server.client().remoteIP().toString());
+    log("I/server: served / to " + server.client().remoteIP().toString());
   });
   server.on("/log", []() {
     server.send(200, "text/plain", logMsg);
-    log("server: served /log to " + server.client().remoteIP().toString());
+    log("I/server: served /log to " + server.client().remoteIP().toString());
   });
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
     syncntp();
-    log("system: clock sync routine run for request from " + server.client().remoteIP().toString());
+    log("I/system: clock sync routine run for request from " + server.client().remoteIP().toString());
   });
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting clock");
-    log("system: rebooting upon request from " + server.client().remoteIP().toString());
+    log("I/system: rebooting upon request from " + server.client().remoteIP().toString());
     delay(1000);
     ESP.restart();
   });
@@ -210,7 +210,7 @@ void loop() {
   }
 
   if (minute == 10 && second == 0 && AUTO_UPDATE) {
-    log("system: running auto update via NTP");
+    log("I/system: running auto update via NTP");
     syncntp();
   }
 
@@ -247,14 +247,14 @@ void log(String msg) {
 
 
 void syncntp() {
-  log("ntp: clock update started");
+  log("I/ntp: clock update started");
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
     wifiCount++;
     if (wifiCount > WIFI_TIMEOUT) {
       wifiCount = 0;
-      log("ntp: wifi timeout");
+      log("E/ntp: wifi timeout");
       display.set("ERR4");
       display.show(3000);
       return;
@@ -270,7 +270,7 @@ void syncntp() {
   display.show(3000);
   int cb = udp.parsePacket();
   if (!cb) {
-    log("ntp: packet empty");
+    log("E/ntp: packet empty");
     display.set("ERR5");
     display.show(3000);
   } else {
@@ -285,7 +285,7 @@ void syncntp() {
       localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
     }
     rtc.adjust(DateTime(localTime));
-    log("ntp: clock updated");
+    log("I/ntp: clock updated");
     display.set("DONE");
     display.show(3000);
   }
@@ -309,7 +309,7 @@ unsigned long sendNTPpacket(IPAddress& address) {
 
 
 void countdown() {
-  log("countdown: started countdown upon request from " + server.client().remoteIP().toString());
+  log("I/countdown: started countdown upon request from " + server.client().remoteIP().toString());
   if (server.arg("secs") == "") {
     server.send(400, "text/plain", "Countdown period not specified!");
   } else {
@@ -323,12 +323,12 @@ void countdown() {
     tone(TICK_PIN, 1000, 1000);
     display.show(3000);
   }
-  log("countdown: completed");
+  log("I/countdown: completed");
 }
 
 
 void setAlarm() {
-  log("alarm: started setAlarm upon request from " + server.client().remoteIP().toString());
+  log("I/alarm: started setAlarm upon request from " + server.client().remoteIP().toString());
   if (server.arg("hour") == "" || server.arg("minute") == "") {
     server.send(400, "text/plain", "Alarm time not specified!");
   } else {
@@ -367,12 +367,12 @@ void setAlarm() {
     display.set("DONE");
     display.show(1000);
   }
-  log("alarm: completed setAlarm");
+  log("I/alarm: completed setAlarm");
 }
 
 
 void showAlarm() {
-  log("alarm: started showAlarm upon request from " + server.client().remoteIP().toString());
+  log("I/alarm: started showAlarm upon request from " + server.client().remoteIP().toString());
   if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
@@ -404,12 +404,12 @@ void showAlarm() {
     display.set("DONE");
     display.show(1000);
   }
-  log("alarm: completed showAlarm");
+  log("I/alarm: completed showAlarm");
 }
 
 
 void cancelAlarm() {
-  log("alarm: started cancelAlarm upon request from " + server.client().remoteIP().toString());
+  log("I/alarm: started cancelAlarm upon request from " + server.client().remoteIP().toString());
   if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
@@ -427,15 +427,15 @@ void cancelAlarm() {
     display.set("CXLD");
     display.show(3000);
   }
-  log("alarm: completed cancelAlarm");
+  log("I/alarm: completed cancelAlarm");
 }
 
 
 void doAlarm() {
-  log("alarm: started doAlarm");
+  log("I/alarm: started doAlarm");
   for (int i = 0; i < ALARM_BEEPS; i++) {
     if (digitalRead(SYNC_PIN) == LOW) {
-      log("alarm: alarm dismissed");
+      log("I/alarm: alarm dismissed");
       break;
     }
     display.set("ALRM");
@@ -449,5 +449,5 @@ void doAlarm() {
   digitalWrite(SYNC_PIN, HIGH);
   pinMode(SYNC_PIN, INPUT_PULLUP);
   delay(3000);
-  log("alarm: completed doAlarm");
+  log("I/alarm: completed doAlarm");
 }
