@@ -51,7 +51,7 @@ bool chimed = false;
 bool alarmed = false;
 const int numChimes = 4;
 unsigned long lastTime = 0;
-String logTime = "00:00:00";
+String logTime = "00/00/0000 00:00:00";
 const int ntpPacketSize = 48;
 unsigned long previousMillis = 0;
 byte packetBuffer[ntpPacketSize];
@@ -141,6 +141,9 @@ void setup() {
 
 void loop() {
   DateTime now = rtc.now();
+  int day = now.day();
+  int month = now.month();
+  int year = now.year() - 70;
   int hour = now.hour();
   int minute = now.minute();
   int second = now.second();
@@ -154,10 +157,21 @@ void loop() {
     alarmed = false;
   }
 
-  if (hour < 10) {
-    logTime = "0" + String(hour) + ":";
+  if (day < 10) {
+    logTime = "0" + String(day) + "/";
   } else {
-    logTime = String(hour) + ":";
+    logTime = String(day) + "/";
+  }
+  if (month < 10) {
+    logTime += "0" + String(month) + "/";
+  } else {
+    logTime += String(month) + "/";
+  }
+  logTime += String(year) + " ";
+  if (hour < 10) {
+    logTime += "0" + String(hour) + ":";
+  } else {
+    logTime += String(hour) + ":";
   }
   if (minute < 10) {
     logTime += "0" + String(minute) + ":";
@@ -239,7 +253,6 @@ void loop() {
 
 
 void log(String msg) {
-  //logMsg = logMsg + "[MILLIS: " + millis() + "] ";
   logMsg = logMsg + "[" + logTime + "] ";
   logMsg = logMsg + "[FREE_MEM: " + String(system_get_free_heap_size()) + "] ";
   logMsg = logMsg + msg + "\n";
