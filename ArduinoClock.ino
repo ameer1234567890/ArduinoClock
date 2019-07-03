@@ -58,16 +58,13 @@ byte packetBuffer[ntpPacketSize];
 const unsigned int localPort = 2390;
 const long intervalBetweenChimes = 200;
 const char* ntpServerName = "pool.ntp.org";
-struct { 
+typedef struct { 
   uint set = 0;
   uint hour = 0;
   uint minute = 0;
-} alarmData;
-struct { 
-  uint set = 0;
-  uint hour = 0;
-  uint minute = 0;
-} alarmDataOld;
+} eepromData;
+eepromData alarmData;
+eepromData alarmDataOld;
 
 WiFiUDP udp;
 RTC_DS1307 rtc;
@@ -260,14 +257,14 @@ void log(String msg) {
 
 
 void syncntp() {
-  log("I/ntp: clock update started");
+  log("I/ntp   : clock update started");
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
     wifiCount++;
     if (wifiCount > WIFI_TIMEOUT) {
       wifiCount = 0;
-      log("E/ntp: wifi timeout");
+      log("E/ntp   : wifi timeout");
       display.set("ERR4");
       display.show(3000);
       return;
@@ -283,7 +280,7 @@ void syncntp() {
   display.show(3000);
   int cb = udp.parsePacket();
   if (!cb) {
-    log("E/ntp: packet empty");
+    log("E/ntp   : packet empty");
     display.set("ERR5");
     display.show(3000);
   } else {
@@ -298,7 +295,7 @@ void syncntp() {
       localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
     }
     rtc.adjust(DateTime(localTime));
-    log("I/ntp: clock updated");
+    log("I/ntp   : clock updated");
     display.set("DONE");
     display.show(3000);
   }
@@ -322,7 +319,7 @@ unsigned long sendNTPpacket(IPAddress& address) {
 
 
 void countdown() {
-  log("I/countdown: started countdown upon request from " + server.client().remoteIP().toString());
+  log("I/ctdown: started countdown upon request from " + server.client().remoteIP().toString());
   if (server.arg("secs") == "") {
     server.send(400, "text/plain", "Countdown period not specified!");
   } else {
@@ -336,12 +333,12 @@ void countdown() {
     tone(TICK_PIN, 1000, 1000);
     display.show(3000);
   }
-  log("I/countdown: completed");
+  log("I/ctdown: completed");
 }
 
 
 void setAlarm() {
-  log("I/alarm: started setAlarm upon request from " + server.client().remoteIP().toString());
+  log("I/alarm : started setAlarm upon request from " + server.client().remoteIP().toString());
   if (server.arg("hour") == "" || server.arg("minute") == "") {
     server.send(400, "text/plain", "Alarm time not specified!");
   } else {
@@ -380,12 +377,12 @@ void setAlarm() {
     display.set("DONE");
     display.show(1000);
   }
-  log("I/alarm: completed setAlarm");
+  log("I/alarm : completed setAlarm");
 }
 
 
 void showAlarm() {
-  log("I/alarm: started showAlarm upon request from " + server.client().remoteIP().toString());
+  log("I/alarm : started showAlarm upon request from " + server.client().remoteIP().toString());
   if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
@@ -417,12 +414,12 @@ void showAlarm() {
     display.set("DONE");
     display.show(1000);
   }
-  log("I/alarm: completed showAlarm");
+  log("I/alarm : completed showAlarm");
 }
 
 
 void cancelAlarm() {
-  log("I/alarm: started cancelAlarm upon request from " + server.client().remoteIP().toString());
+  log("I/alarm : started cancelAlarm upon request from " + server.client().remoteIP().toString());
   if (EEPROM.read(eepromAddr) == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
@@ -440,15 +437,15 @@ void cancelAlarm() {
     display.set("CXLD");
     display.show(3000);
   }
-  log("I/alarm: completed cancelAlarm");
+  log("I/alarm : completed cancelAlarm");
 }
 
 
 void doAlarm() {
-  log("I/alarm: started doAlarm");
+  log("I/alarm : started doAlarm");
   for (int i = 0; i < ALARM_BEEPS; i++) {
     if (digitalRead(SYNC_PIN) == LOW) {
-      log("I/alarm: alarm dismissed");
+      log("I/alarm : alarm dismissed");
       break;
     }
     display.set("ALRM");
@@ -462,5 +459,5 @@ void doAlarm() {
   digitalWrite(SYNC_PIN, HIGH);
   pinMode(SYNC_PIN, INPUT_PULLUP);
   delay(3000);
-  log("I/alarm: completed doAlarm");
+  log("I/alarm : completed doAlarm");
 }
