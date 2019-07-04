@@ -32,9 +32,9 @@ const char* pass = STA_PSK;
 #define DISPLAY_SIZE 4 // number of digits
 #define DISPLAY_TYPE COMMON_ANODE // either COMMON_ANODE or COMMON_CATHODE
 const int ALARM_BEEPS = 10; // number of beeps during alarm
+const int SERVER_PORT = 80; // Port number for server to initiate sync remotely
 const String TIMEZONE = "+5"; // local timezone
 const int NTP_TIMEOUT = 5000; // NTP request timeout interval
-const int SERVER_PORT = 8888; // Port number for server to initiate sync remotely
 const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
 const bool AUTO_UPDATE = true; // true to update clock via NTP automatically
 const bool HOURLY_CHIME = true; // true for a chime at the start of every hour
