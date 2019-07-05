@@ -130,6 +130,9 @@ void setup() {
     display.set(String(progress / (total / 100)), ALIGN_RIGHT);
     display.show();
   });
+  ArduinoOTA.onError([](ota_error_t error) {
+    log("E/ota   : ota failed: " + String(error));
+  });
 
   EEPROM.begin(512);
   EEPROM.get(eepromAddr, alarmData);
