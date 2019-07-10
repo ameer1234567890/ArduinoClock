@@ -430,9 +430,7 @@ void cancelAlarm() {
     display.set("NONE");
     display.show(3000);
   } else {
-    for (int i = 0; i < 512; i++) {
-      EEPROM.write(i, 0);
-    }
+    EEPROM.write(0, 0);
     EEPROM.commit();
     server.send(200, "text/plain", "Alarm cancelled");
     display.set("ALRM");
