@@ -6,7 +6,6 @@
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoOTA.h>
-#include "user_interface.h"
 #include "Secrets.h"
 
 /*
@@ -254,7 +253,6 @@ void loop() {
 
 void log(String msg) {
   logMsg = logMsg + "[" + logTime + "] ";
-  logMsg = logMsg + "[FREE_MEM: " + String(system_get_free_heap_size()) + "] ";
   logMsg = logMsg + msg + "\n";
 }
 
@@ -351,7 +349,7 @@ void setAlarm() {
     alarmData.hour = alarmHour;
     alarmData.minute = alarmMinute;
     EEPROM.get(eepromAddr, alarmDataOld);
-    if (alarmDataOld.hour == alarmData.hour && alarmDataOld.minute == alarmData.minute) {
+    if (alarmDataOld.set == alarmData.set && alarmDataOld.hour == alarmData.hour && alarmDataOld.minute == alarmData.minute) {
       server.send(200, "text/plain", "Alarm already set for " + String(alarmData.hour) + ":" + String(alarmData.minute));
     } else {
       EEPROM.put(eepromAddr, alarmData);
@@ -386,7 +384,7 @@ void setAlarm() {
 
 void showAlarm() {
   log("I/alarm : started showAlarm upon request from " + server.client().remoteIP().toString());
-  if (EEPROM.read(eepromAddr) == 0) {
+  if (alarmData.set == 0) {
     server.send(200, "text/plain", "No alarm set");
     display.set("ALRM");
     display.show(1000);
@@ -432,6 +430,7 @@ void cancelAlarm() {
   } else {
     EEPROM.write(0, 0);
     EEPROM.commit();
+    alarmData.set = 0;
     server.send(200, "text/plain", "Alarm cancelled");
     display.set("ALRM");
     display.show(1000);
