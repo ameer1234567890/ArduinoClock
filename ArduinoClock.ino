@@ -327,21 +327,28 @@ String getTimeString(uint hour, uint minute) {
 
 
 void countdown() {
-  log("I/ctdown: started countdown upon request from " + server.client().remoteIP().toString());
-  if (server.arg("secs") == "") {
+  if (server.arg("secs") == "" && server.arg("mins") == "") {
     server.send(400, "text/plain", "Countdown period not specified!");
+    log("I/ctdown: no period specified. request from " + server.client().remoteIP().toString());
   } else {
+    log("I/ctdown: started countdown upon request from " + server.client().remoteIP().toString());
     server.send(200, "text/plain", "Countdown started");
-    for (int secs = server.arg("secs").toInt(); secs > 0; secs--) {
+    int secs = (server.arg("mins").toInt() * 60) + server.arg("secs").toInt();
+    for (secs; secs > 0; secs--) {
       display.set(secs, ALIGN_RIGHT);
-      tone(TICK_PIN, 1000, 2);
+      tone(TICK_PIN, 1000, 100);
       display.show(1000);
     }
     display.set("GO", ALIGN_RIGHT);
     tone(TICK_PIN, 1000, 1000);
-    display.show(3000);
+    display.show(1000);
+    display.set("");
+    display.show(500);
+    display.set("GO", ALIGN_RIGHT);
+    tone(TICK_PIN, 1000, 1000);
+    display.show(1000);
+    log("I/ctdown: completed for " + String(secs) + " seconds");
   }
-  log("I/ctdown: completed");
 }
 
 
