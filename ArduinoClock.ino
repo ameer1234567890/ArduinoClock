@@ -99,6 +99,7 @@ void setup() {
       <a href=\"/setalarm?hour=14&minute=44\">/setalarm?hour=14&minute=44</a><br>\
       <a href=\"/showalarm\">/showalarm</a><br>\
       <a href=\"/cancelalarm\">/cancelalarm</a><br>\
+      <br><p><small>Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a></small></p>\
     ");
     log("I/server: served / to " + server.client().remoteIP().toString());
   });
