@@ -190,21 +190,8 @@ void loop() {
   if (hour == 0 && !MILITARY_TIME) {
     hour = 12;
   }
-  if (hour < 10 && LEADING_ZEROS) {
-    timeString = "0" + String(hour);
-  } else if (hour < 10 && !LEADING_ZEROS) {
-    timeString = " " + String(hour);
-  } else {
-    timeString = String(hour);
-  }
 
-  if (minute < 10 && LEADING_ZEROS) {
-    timeString += "0" + String(minute);
-  } else if (minute < 10 && !LEADING_ZEROS) {
-    timeString += " " + String(minute);
-  } else {
-    timeString += String(minute);
-  }
+  timeString = getTimeString(hour, minute);
 
   if (minute == 0) {
     if (HOURLY_CHIME && !chimed) {
@@ -320,6 +307,25 @@ unsigned long sendNTPpacket(IPAddress& address) {
 }
 
 
+String getTimeString(uint hour, uint minute) {
+  if (hour < 10 && LEADING_ZEROS) {
+    timeString = "0" + String(hour);
+  } else if (hour < 10 && !LEADING_ZEROS) {
+    timeString = " " + String(hour);
+  } else {
+    timeString = String(hour);
+  }
+  if (minute < 10 && LEADING_ZEROS) {
+    timeString += "0" + String(minute);
+  } else if (minute < 10 && !LEADING_ZEROS) {
+    timeString += " " + String(minute);
+  } else {
+    timeString += String(minute);
+  }
+  return timeString;
+}
+
+
 void countdown() {
   log("I/ctdown: started countdown upon request from " + server.client().remoteIP().toString());
   if (server.arg("secs") == "") {
@@ -357,20 +363,7 @@ void setAlarm() {
       EEPROM.commit();
       server.send(200, "text/plain", "Alarm set for " + String(alarmData.hour) + ":" + String(alarmData.minute));
     }
-    if (alarmData.hour < 10 && LEADING_ZEROS) {
-      timeString = "0" + String(alarmData.hour);
-    } else if (alarmData.hour < 10 && !LEADING_ZEROS) {
-      timeString = " " + String(alarmData.hour);
-    } else {
-      timeString = String(alarmData.hour);
-    }
-    if (alarmData.minute < 10 && LEADING_ZEROS) {
-      timeString += "0" + String(alarmData.minute);
-    } else if (alarmData.minute < 10 && !LEADING_ZEROS) {
-      timeString += " " + String(alarmData.minute);
-    } else {
-      timeString += String(alarmData.minute);
-    }
+    timeString = getTimeString(alarmData.hour, alarmData.minute);
     display.set("ALRM");
     display.show(1000);
     display.set(timeString);
@@ -394,20 +387,7 @@ void showAlarm() {
   } else {
     EEPROM.get(eepromAddr, alarmData);
     server.send(200, "text/plain", "Alarm is set for " + String(alarmData.hour) + ":" + String(alarmData.minute));
-    if (alarmData.hour < 10 && LEADING_ZEROS) {
-      timeString = "0" + String(alarmData.hour);
-    } else if (alarmData.hour < 10 && !LEADING_ZEROS) {
-      timeString = " " + String(alarmData.hour);
-    } else {
-      timeString = String(alarmData.hour);
-    }
-    if (alarmData.minute < 10 && LEADING_ZEROS) {
-      timeString += "0" + String(alarmData.minute);
-    } else if (alarmData.minute < 10 && !LEADING_ZEROS) {
-      timeString += " " + String(alarmData.minute);
-    } else {
-      timeString += String(alarmData.minute);
-    }
+    timeString = getTimeString(alarmData.hour, alarmData.minute);
     display.set("ALRM");
     display.show(1000);
     display.set(timeString);
