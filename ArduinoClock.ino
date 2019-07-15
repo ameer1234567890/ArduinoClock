@@ -228,10 +228,7 @@ void loop() {
 
   if (digitalRead(SYNC_PIN) == LOW) {
     syncntp();
-    // a kind of de-boucing
-    pinMode(SYNC_PIN, OUTPUT);
-    digitalWrite(SYNC_PIN, HIGH);
-    pinMode(SYNC_PIN, INPUT_PULLUP);
+    debouce();
   }
 
   server.handleClient();
@@ -324,6 +321,14 @@ String getTimeString(uint hour, uint minute) {
     timeString += String(minute);
   }
   return timeString;
+}
+
+
+void debouce() {
+  // de-bouce by re-setting the pin
+  pinMode(SYNC_PIN, OUTPUT);
+  digitalWrite(SYNC_PIN, HIGH);
+  pinMode(SYNC_PIN, INPUT_PULLUP);
 }
 
 
@@ -444,10 +449,7 @@ void doAlarm() {
     tone(TICK_PIN, 1000, 1000);
     display.show(1000);
   }
-  // a kind of de-boucing
-  pinMode(SYNC_PIN, OUTPUT);
-  digitalWrite(SYNC_PIN, HIGH);
-  pinMode(SYNC_PIN, INPUT_PULLUP);
+  debouce();
   delay(3000);
   log("I/alarm : completed doAlarm");
 }
