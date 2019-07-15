@@ -50,12 +50,12 @@ bool chimed = false;
 bool alarmed = false;
 const int numChimes = 4;
 unsigned long lastTime = 0;
-String logTime = "00/00/0000 00:00:00";
 const int ntpPacketSize = 48;
 unsigned long previousMillis = 0;
 byte packetBuffer[ntpPacketSize];
 const unsigned int localPort = 2390;
 const long intervalBetweenChimes = 200;
+String logTime = "00/00/0000 00:00:00";
 const char* ntpServerName = "pool.ntp.org";
 typedef struct { 
   uint set = 0;
