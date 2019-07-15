@@ -223,11 +223,12 @@ void loop() {
 
   if (millis() - lastTime >= 1000 || !lastTime) {
     lastTime = millis();
-    tone(TICK_PIN, 1000, 2);
+    tone(TICK_PIN, 500, 2);
   }
 
   if (digitalRead(SYNC_PIN) == LOW) {
     syncntp();
+    // a kind of de-boucing
     pinMode(SYNC_PIN, OUTPUT);
     digitalWrite(SYNC_PIN, HIGH);
     pinMode(SYNC_PIN, INPUT_PULLUP);
@@ -443,6 +444,7 @@ void doAlarm() {
     tone(TICK_PIN, 1000, 1000);
     display.show(1000);
   }
+  // a kind of de-boucing
   pinMode(SYNC_PIN, OUTPUT);
   digitalWrite(SYNC_PIN, HIGH);
   pinMode(SYNC_PIN, INPUT_PULLUP);
