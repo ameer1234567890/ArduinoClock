@@ -36,7 +36,7 @@ const String TIMEZONE = "+5"; // local timezone
 const int NTP_TIMEOUT = 5000; // NTP request timeout interval
 const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
 const bool AUTO_UPDATE = true; // true to update clock via NTP automatically
-const bool HOURLY_CHIME = true; // true for a chime at the start of every hour
+const bool HOURLY_CHIME = false; // true for a chime at the start of every hour
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
 
