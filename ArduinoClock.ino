@@ -50,6 +50,7 @@ bool chimed = false;
 bool alarmed = false;
 const int numChimes = 4;
 bool dismissAlarm = false;
+bool stopCountdown = false;
 unsigned long lastTime = 0;
 const int ntpPacketSize = 48;
 unsigned long previousMillis = 0;
@@ -97,6 +98,7 @@ void setup() {
       <a href=\"/sync\">/sync</a><br>\
       <a href=\"/reboot\">/reboot</a><br>\
       <a href=\"/countdown?secs=10\">/countdown?secs=10</a><br>\
+      <a href=\"/stopcountdown\">/stopcountdown</a><br>\
       <a href=\"/setalarm?hour=14&minute=44\">/setalarm?hour=14&minute=44</a><br>\
       <a href=\"/showalarm\">/showalarm</a><br>\
       <a href=\"/cancelalarm\">/cancelalarm</a><br>\
@@ -121,6 +123,11 @@ void setup() {
     ESP.restart();
   });
   server.on("/countdown", countdown);
+  server.on("/stopcountdown", []() {
+    server.send(200, "text/plain", "Stopping countdown");
+    log("I/system: stopping countdown upon request from " + server.client().remoteIP().toString());
+    stopCountdown = true;
+  });
   server.on("/setalarm", setAlarm);
   server.on("/showalarm", showAlarm);
   server.on("/cancelalarm", cancelAlarm);
@@ -242,6 +249,8 @@ void loop() {
   server.handleClient();
 
   ArduinoOTA.handle();
+
+  stopCountdown = false; // this is to avoid countdown being unable to start
 }
 
 
@@ -352,16 +361,30 @@ void countdown() {
       display.set(secs, ALIGN_RIGHT);
       tone(TICK_PIN, 1000, 100);
       display.show(1000);
+      if (digitalRead(SYNC_PIN) == LOW || stopCountdown) {
+        stopCountdown = true;
+        log("I/ctdown: countdown stopped");
+        break;
+      }
+      server.handleClient();
+      ArduinoOTA.handle();
     }
-    display.set("GO", ALIGN_RIGHT);
-    tone(TICK_PIN, 1000, 1000);
-    display.show(1000);
-    display.set("");
-    display.show(500);
-    display.set("GO", ALIGN_RIGHT);
-    tone(TICK_PIN, 1000, 1000);
-    display.show(1000);
-    log("I/ctdown: completed for " + String(secs) + " seconds");
+    if (stopCountdown == true) {
+      stopCountdown = false;
+      display.set("STOP");
+      display.show(2000);
+      debouce();
+    } else {
+      display.set("GO", ALIGN_RIGHT);
+      tone(TICK_PIN, 1000, 1000);
+      display.show(1000);
+      display.set("");
+      display.show(500);
+      display.set("GO", ALIGN_RIGHT);
+      tone(TICK_PIN, 1000, 1000);
+      display.show(1000);
+      log("I/ctdown: completed for " + String(secs) + " seconds");
+    }
   }
 }
 
