@@ -49,6 +49,7 @@ uint eepromAddr = 0;
 bool chimed = false;
 bool alarmed = false;
 const int numChimes = 4;
+bool dismissAlarm = false;
 unsigned long lastTime = 0;
 const int ntpPacketSize = 48;
 unsigned long previousMillis = 0;
@@ -99,6 +100,7 @@ void setup() {
       <a href=\"/setalarm?hour=14&minute=44\">/setalarm?hour=14&minute=44</a><br>\
       <a href=\"/showalarm\">/showalarm</a><br>\
       <a href=\"/cancelalarm\">/cancelalarm</a><br>\
+      <a href=\"/dismissalarm\">/dismissalarm</a><br>\
       <br><p><small>Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a></small></p>\
     ");
     log("I/server: served / to " + server.client().remoteIP().toString());
@@ -122,6 +124,11 @@ void setup() {
   server.on("/setalarm", setAlarm);
   server.on("/showalarm", showAlarm);
   server.on("/cancelalarm", cancelAlarm);
+  server.on("/dismissalarm", []() {
+    server.send(200, "text/plain", "Dismissing alarm");
+    log("I/system: dismissing alarm upon request from " + server.client().remoteIP().toString());
+    dismissAlarm = true;
+  });
   server.begin();
 
   ArduinoOTA.setHostname(OTA_HOSTNAME);
@@ -155,6 +162,7 @@ void loop() {
     }
   } else {
     alarmed = false;
+    dismissAlarm = false; // this is to avoid dismissal before the alarm starts
   }
 
   if (day < 10) {
@@ -438,10 +446,13 @@ void cancelAlarm() {
 void doAlarm() {
   log("I/alarm : started doAlarm");
   for (int i = 0; i < ALARM_BEEPS; i++) {
-    if (digitalRead(SYNC_PIN) == LOW) {
+    if (digitalRead(SYNC_PIN) == LOW || dismissAlarm) {
+      dismissAlarm = false;
       log("I/alarm : alarm dismissed");
       break;
     }
+    server.handleClient();
+    ArduinoOTA.handle();
     display.set("ALRM");
     display.show(1000);
     display.set(timeString);
