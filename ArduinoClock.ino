@@ -94,18 +94,18 @@ void setup() {
   }
 
   server.on("/", []() {
-    server.send(200, "text/html", "\
-      <a href=\"/log\">/log</a><br>\
-      <a href=\"/sync\">/sync</a><br>\
-      <a href=\"/reboot\">/reboot</a><br>\
-      <a href=\"/countdown?secs=10\">/countdown?secs=10</a><br>\
-      <a href=\"/stopcountdown\">/stopcountdown</a><br>\
-      <a href=\"/setalarm?hour=14&minute=44\">/setalarm?hour=14&minute=44</a><br>\
-      <a href=\"/showalarm\">/showalarm</a><br>\
-      <a href=\"/cancelalarm\">/cancelalarm</a><br>\
-      <a href=\"/dismissalarm\">/dismissalarm</a><br>\
-      <br><p><small>Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a></small></p>\
-    ");
+    server.send(200, "text/html", \
+      "<a href=\"/log\">/log</a><br>"\
+      "<a href=\"/sync\">/sync</a><br>"\
+      "<a href=\"/reboot\">/reboot</a><br>"\
+      "<a href=\"/countdown?secs=10\">/countdown?secs=10</a><br>"\
+      "<a href=\"/stopcountdown\">/stopcountdown</a><br>"\
+      "<a href=\"/setalarm?hour=14&minute=44\">/setalarm?hour=14&minute=44</a><br>"\
+      "<a href=\"/showalarm\">/showalarm</a><br>"\
+      "<a href=\"/cancelalarm\">/cancelalarm</a><br>"\
+      "<a href=\"/dismissalarm\">/dismissalarm</a><br>"\
+      "<br><p><small>Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a></small></p>"\
+    );
     log("I/server: served / to " + server.client().remoteIP().toString());
   });
   server.on("/log", []() {
