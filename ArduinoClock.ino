@@ -46,6 +46,7 @@ String timeString;
 int wifiCount = 0;
 int chimeCount = 0;
 uint eepromAddr = 0;
+bool synced = false;
 bool chimed = false;
 bool alarmed = false;
 const int numChimes = 4;
@@ -225,9 +226,10 @@ void loop() {
     chimed = false;
   }
 
-  if (minute == 10 && second == 0 && AUTO_UPDATE) {
+  if (millis() > 60000 && !synced && AUTO_UPDATE) {
     log("I/system: running auto update via NTP");
     syncntp();
+    synced = true;
   }
 
   display.set(timeString);
