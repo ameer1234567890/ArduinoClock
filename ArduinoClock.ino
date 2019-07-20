@@ -24,10 +24,10 @@ const char* pass = STA_PSK;
 
 /* Configurable variables */
 #define TICK_PIN D5
-#define SYNC_PIN D0
 #define DATA_PIN D6
 #define LATCH_PIN D7
 #define CLOCK_PIN D8
+#define BUTTON_PIN D0
 #define DISPLAY_SIZE 4 // number of digits
 #define DISPLAY_TYPE COMMON_ANODE // either COMMON_ANODE or COMMON_CATHODE
 const int ALARM_BEEPS = 10; // number of beeps during alarm
@@ -78,7 +78,7 @@ ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE)
 void setup() {
   log("I/system: startup");
   pinMode(TICK_PIN, OUTPUT);
-  pinMode(SYNC_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
   if (!rtc.begin()) {
     display.set("ERR1");
     while (true) {
@@ -246,7 +246,7 @@ void loop() {
     tone(TICK_PIN, 500, 2);
   }
 
-  if (digitalRead(SYNC_PIN) == LOW) {
+  if (digitalRead(BUTTON_PIN) == LOW) {
     syncntp();
     debouce();
   }
@@ -348,9 +348,9 @@ String getTimeString(uint hour, uint minute) {
 
 void debouce() {
   // de-bouce by re-setting the pin
-  pinMode(SYNC_PIN, OUTPUT);
-  digitalWrite(SYNC_PIN, HIGH);
-  pinMode(SYNC_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_PIN, OUTPUT);
+  digitalWrite(BUTTON_PIN, HIGH);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 }
 
 
@@ -366,7 +366,7 @@ void countdown() {
       display.set(secs, ALIGN_RIGHT);
       tone(TICK_PIN, 1000, 100);
       display.show(1000);
-      if (digitalRead(SYNC_PIN) == LOW || stopCountdown) {
+      if (digitalRead(BUTTON_PIN) == LOW || stopCountdown) {
         stopCountdown = true;
         log("I/ctdown: countdown stopped");
         break;
@@ -474,7 +474,7 @@ void cancelAlarm() {
 void doAlarm() {
   log("I/alarm : started doAlarm");
   for (int i = 0; i < ALARM_BEEPS; i++) {
-    if (digitalRead(SYNC_PIN) == LOW || dismissAlarm) {
+    if (digitalRead(BUTTON_PIN) == LOW || dismissAlarm) {
       dismissAlarm = false;
       log("I/alarm : alarm dismissed");
       break;
