@@ -363,7 +363,12 @@ void countdown() {
     server.send(200, "text/plain", "Countdown started");
     int secs = (server.arg("mins").toInt() * 60) + server.arg("secs").toInt();
     for (secs; secs > 0; secs--) {
-      display.set(secs, ALIGN_RIGHT);
+      if (secs <= 60) {
+        display.set(secs, ALIGN_RIGHT);
+      } else {
+        display.set(getTimeString(abs(secs / 60), secs % 60));
+        display.setDot(1, true);
+      }
       tone(TICK_PIN, 1000, 100);
       display.show(1000);
       if (digitalRead(BUTTON_PIN) == LOW || stopCountdown) {
