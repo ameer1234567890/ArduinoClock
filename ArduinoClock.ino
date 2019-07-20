@@ -104,7 +104,10 @@ void setup() {
       "<a href=\"/showalarm\">/showalarm</a><br>"\
       "<a href=\"/cancelalarm\">/cancelalarm</a><br>"\
       "<a href=\"/dismissalarm\">/dismissalarm</a><br>"\
-      "<br><p><small>Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a></small></p>"\
+      "<br><p><small>"\
+      "Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a> | "\
+      "Chip ID: " + String(ESP.getChipId()) + \
+      "</small></p>"\
     );
     log("I/server: served / to " + server.client().remoteIP().toString());
   });
