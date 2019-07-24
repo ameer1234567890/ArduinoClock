@@ -6,6 +6,7 @@
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoOTA.h>
+#include <ESP8266httpUpdate.h>
 #include "Secrets.h"
 
 /*
@@ -39,6 +40,7 @@ const bool AUTO_UPDATE = true; // true to update clock via NTP automatically
 const bool HOURLY_CHIME = false; // true for a chime at the start of every hour
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
+const String OTA_URL = "http://192.168.100.44/ArduinoClock/ArduinoClock.ino.bin"; // HTTP OTA update URL
 
 /* Do not change unless you know what you are doing */
 String logMsg;
@@ -70,6 +72,7 @@ eepromData alarmDataOld;
 
 WiFiUDP udp;
 RTC_DS1307 rtc;
+WiFiClient wClient;
 IPAddress timeServerIP;
 ESP8266WebServer server(SERVER_PORT);
 ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
@@ -79,6 +82,9 @@ void setup() {
   log("I/system: startup");
   pinMode(TICK_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  if (digitalRead(BUTTON_PIN) == LOW) {
+    runHTTPUpdate();
+  }
   if (!rtc.begin()) {
     display.set("ERR1");
     while (true) {
@@ -104,6 +110,7 @@ void setup() {
       "<a href=\"/showalarm\">/showalarm</a><br>"\
       "<a href=\"/cancelalarm\">/cancelalarm</a><br>"\
       "<a href=\"/dismissalarm\">/dismissalarm</a><br>"\
+      "<a href=\"/otaupdate\">/otaupdate</a><br>"\
       "<br><p><small>"\
       "Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a> | "\
       "Chip ID: " + String(ESP.getChipId()) + \
@@ -139,6 +146,11 @@ void setup() {
     server.send(200, "text/plain", "Dismissing alarm");
     log("I/system: dismissing alarm upon request from " + server.client().remoteIP().toString());
     dismissAlarm = true;
+  });
+  server.on("/otaupdate", []() {
+    server.send(200, "text/plain", "HTTP OTA update started");
+    log("I/system: ota update started upon request from " + server.client().remoteIP().toString());
+    runHTTPUpdate();
   });
   server.begin();
 
@@ -248,7 +260,7 @@ void loop() {
 
   if (digitalRead(BUTTON_PIN) == LOW) {
     syncntp();
-    debouce();
+    debounce();
   }
 
   server.handleClient();
@@ -259,14 +271,7 @@ void loop() {
 }
 
 
-void log(String msg) {
-  logMsg = logMsg + "[" + logTime + "] ";
-  logMsg = logMsg + msg + "\n";
-}
-
-
-void syncntp() {
-  log("I/ntp   : clock update started");
+void setupWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
@@ -282,6 +287,19 @@ void syncntp() {
       display.show();
     }
   }
+  log("I/wifi  : WiFi connected. IP address: " + WiFi.localIP().toString());
+}
+
+
+void log(String msg) {
+  logMsg = logMsg + "[" + logTime + "] ";
+  logMsg = logMsg + msg + "\n";
+}
+
+
+void syncntp() {
+  setupWifi();
+  log("I/ntp   : clock update started");
   udp.begin(localPort);
   WiFi.hostByName(ntpServerName, timeServerIP);
   sendNTPpacket(timeServerIP);
@@ -346,11 +364,36 @@ String getTimeString(uint hour, uint minute) {
 }
 
 
-void debouce() {
+void debounce() {
   // de-bouce by re-setting the pin
   pinMode(BUTTON_PIN, OUTPUT);
   digitalWrite(BUTTON_PIN, HIGH);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+}
+
+
+void runHTTPUpdate() {
+  log("I/updatr: HTTP OTA update started");
+  display.set("OTA ");
+  display.show(3000);
+  setupWifi();
+  ESPhttpUpdate.rebootOnUpdate(false);
+  display.set("UPDT");
+  display.show(1000);
+  HTTPUpdateResult ret = ESPhttpUpdate.update(wClient, OTA_URL);
+  switch(ret) {
+    case HTTP_UPDATE_FAILED:
+      log("E/updatr: HTTP OTA update failed");
+      display.set("ERR6");
+      display.show(3000);
+      break;
+    case HTTP_UPDATE_OK:
+      log("I/updatr: HTTP OTA update completed. reboot required!");
+      display.set("DONE");
+      display.show(3000);
+      break;
+  }
+  debounce();
 }
 
 
@@ -383,7 +426,7 @@ void countdown() {
       stopCountdown = false;
       display.set("STOP");
       display.show(2000);
-      debouce();
+      debounce();
     } else {
       display.set("GO", ALIGN_RIGHT);
       tone(TICK_PIN, 1000, 1000);
@@ -493,7 +536,7 @@ void doAlarm() {
     tone(TICK_PIN, 1000, 1000);
     display.show(1000);
   }
-  debouce();
+  debounce();
   delay(3000);
   log("I/alarm : completed doAlarm");
 }
