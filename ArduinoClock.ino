@@ -124,8 +124,8 @@ void setup() {
   });
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
+    log("I/system: running clock sync routine upon request from " + server.client().remoteIP().toString());
     syncntp();
-    log("I/system: clock sync routine run for request from " + server.client().remoteIP().toString());
   });
   server.on("/reboot", []() {
     server.send(200, "text/plain", "Rebooting clock");
