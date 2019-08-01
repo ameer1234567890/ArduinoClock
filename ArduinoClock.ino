@@ -173,7 +173,7 @@ void loop() {
   DateTime now = rtc.now();
   int day = now.day();
   int month = now.month();
-  int year = now.year() - 70;
+  int year = now.year();
   int hour = now.hour();
   int minute = now.minute();
   int second = now.second();
@@ -315,11 +315,13 @@ void syncntp() {
     unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
     unsigned long secsSince1900 = highWord << 16 | lowWord;
-    int localTime;
+    unsigned long unixEpoch = secsSince1900 - 2208988800;
+    log("D/debug : unixEpoch => " + String(unixEpoch));
+    unsigned long localTime;
     if (TIMEZONE.startsWith("+")) {
-      localTime = secsSince1900 + (TIMEZONE.toInt() * 60 * 60);
+      localTime = unixEpoch + (TIMEZONE.toInt() * 60 * 60);
     } else {
-      localTime = secsSince1900 - (TIMEZONE.toInt() * 60 * 60);
+      localTime = unixEpoch - (TIMEZONE.toInt() * 60 * 60);
     }
     rtc.adjust(DateTime(localTime));
     log("I/ntp   : clock updated");
