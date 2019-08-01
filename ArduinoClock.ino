@@ -34,9 +34,10 @@ const char* pass = STA_PSK;
 const int ALARM_BEEPS = 10; // number of beeps during alarm
 const int SERVER_PORT = 80; // Port number for server to initiate sync remotely
 const String TIMEZONE = "+5"; // local timezone
+const int INIT_SYNC = 1000 * 30; // NTP sync on startup, after 30 seconds
+const bool AUTO_SYNC = true; // true to update clock via NTP automatically
 const int NTP_TIMEOUT = 5000; // NTP request timeout interval
 const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
-const bool AUTO_UPDATE = true; // true to update clock via NTP automatically
 const bool HOURLY_CHIME = false; // true for a chime at the start of every hour
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
@@ -58,6 +59,7 @@ unsigned long lastTime = 0;
 const int ntpPacketSize = 48;
 unsigned long previousMillis = 0;
 byte packetBuffer[ntpPacketSize];
+unsigned long lastTimeInitSync = 0;
 const unsigned int localPort = 2390;
 const long intervalBetweenChimes = 200;
 String logTime = "00/00/0000 00:00:00";
@@ -119,8 +121,8 @@ void setup() {
     log("I/server: served / to " + server.client().remoteIP().toString());
   });
   server.on("/log", []() {
-    server.send(200, "text/plain", logMsg);
     log("I/server: served /log to " + server.client().remoteIP().toString());
+    server.send(200, "text/plain", logMsg);
   });
   server.on("/sync", []() {
     server.send(200, "text/plain", "Sync started");
@@ -241,10 +243,10 @@ void loop() {
     chimed = false;
   }
 
-  if (millis() > 60000 && !synced && AUTO_UPDATE) {
+  if (millis() > INIT_SYNC && !synced && AUTO_SYNC && millis() > (lastTimeInitSync + INIT_SYNC)) {
+    lastTimeInitSync = millis();
     log("I/system: running auto update via NTP");
     syncntp();
-    synced = true;
   }
 
   display.set(timeString);
@@ -316,7 +318,6 @@ void syncntp() {
     unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
     unsigned long secsSince1900 = highWord << 16 | lowWord;
     unsigned long unixEpoch = secsSince1900 - 2208988800;
-    log("D/debug : unixEpoch => " + String(unixEpoch));
     unsigned long localTime;
     if (TIMEZONE.startsWith("+")) {
       localTime = unixEpoch + (TIMEZONE.toInt() * 60 * 60);
@@ -324,6 +325,7 @@ void syncntp() {
       localTime = unixEpoch - (TIMEZONE.toInt() * 60 * 60);
     }
     rtc.adjust(DateTime(localTime));
+    synced = true;
     log("I/ntp   : clock updated");
     display.set("DONE");
     display.show(3000);
