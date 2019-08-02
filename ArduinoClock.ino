@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <RTClib.h>
 #include <EEPROM.h>
-#include <ShiftDisplay.h>
+#include <ShiftDisplay2.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
@@ -77,7 +77,7 @@ RTC_DS1307 rtc;
 WiFiClient wClient;
 IPAddress timeServerIP;
 ESP8266WebServer server(SERVER_PORT);
-ShiftDisplay display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
+ShiftDisplay2 display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE);
 
 
 void setup() {
@@ -245,7 +245,7 @@ void loop() {
 
   if (millis() > INIT_SYNC && !synced && AUTO_SYNC && millis() > (lastTimeInitSync + INIT_SYNC)) {
     lastTimeInitSync = millis();
-    log("I/system: running auto update via NTP");
+    log("I/system: running auto sync via NTP");
     syncntp();
   }
 
