@@ -406,9 +406,9 @@ void countdown() {
     server.send(400, "text/plain", "Countdown period not specified!");
     log("I/ctdown: no period specified. request from " + server.client().remoteIP().toString());
   } else {
-    log("I/ctdown: started countdown upon request from " + server.client().remoteIP().toString());
-    server.send(200, "text/plain", "Countdown started");
     int secs = (server.arg("mins").toInt() * 60) + server.arg("secs").toInt();
+    log("I/ctdown: started countdown for " + String(secs) + " seconds upon request from " + server.client().remoteIP().toString());
+    server.send(200, "text/plain", "Countdown started");
     for (secs; secs > 0; secs--) {
       if (secs <= 60) {
         display.set(secs, ALIGN_RIGHT);
@@ -440,7 +440,7 @@ void countdown() {
       display.set("GO", ALIGN_RIGHT);
       tone(TICK_PIN, 1000, 1000);
       display.show(1000);
-      log("I/ctdown: completed for " + String(secs) + " seconds");
+      log("I/ctdown: countdown completed");
     }
   }
 }
