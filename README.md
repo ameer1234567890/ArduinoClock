@@ -46,7 +46,7 @@ Bottom Row: E D DP C G 4
 
 #### Libraries used
 * RTClib: https://github.com/adafruit/RTClib
-* ShiftDisplay: https://miguelpynto.github.io/ShiftDisplay/
+* ShiftDisplay2: https://ameer.io/ShiftDisplay2/
 
 #### Project Progress
 * Initial Clock: https://web.facebook.com/ameer1234567890/posts/10210875516896895
