@@ -21,4 +21,4 @@ install:
   - mkdir -p $HOME/Arduino/libraries
   - ln -s $PWD $HOME/Arduino/libraries/.
 script:
-  - arduino-cli compile --warnings all --fqbn esp8266:esp8266:d1_mini $PWD/ArduinoClock.ino
+  - arduino-cli compile --warnings default --fqbn esp8266:esp8266:d1_mini $PWD/ArduinoClock.ino
