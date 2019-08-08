@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ameer1234567890/ArduinoClock.svg?branch=master)](https://travis-ci.org/ameer1234567890/ArduinoClock)
+
 # ArduinoClock
 A clock in Arduino with a Seven Segment, an RTC, ticking sound and NTP updates
 
