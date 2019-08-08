@@ -17,8 +17,5 @@ before_install:
   - arduino-cli lib install "ShiftDisplay2"
   - arduino-cli lib install "RTClib"
   - touch Secrets.h
-install:
-  - mkdir -p $HOME/Arduino/libraries
-  - ln -s $PWD $HOME/Arduino/libraries/.
 script:
   - arduino-cli compile --fqbn esp8266:esp8266:d1_mini $PWD/ArduinoClock.ino
