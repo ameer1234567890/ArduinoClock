@@ -378,14 +378,13 @@ void debounce() {
 
 void runHTTPUpdate() {
   log("I/updatr: HTTP OTA update started");
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
   display.set("OTA ");
   display.show(3000);
   setupWifi();
   ESPhttpUpdate.rebootOnUpdate(false);
   display.set("UPDT");
   display.show(1000);
+  ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
   HTTPUpdateResult ret = ESPhttpUpdate.update(wClient, OTA_URL);
   switch(ret) {
     case HTTP_UPDATE_FAILED:
@@ -400,7 +399,6 @@ void runHTTPUpdate() {
       break;
   }
   debounce();
-  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 
