@@ -378,6 +378,8 @@ void debounce() {
 
 void runHTTPUpdate() {
   log("I/updatr: HTTP OTA update started");
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
   display.set("OTA ");
   display.show(3000);
   setupWifi();
@@ -398,6 +400,7 @@ void runHTTPUpdate() {
       break;
   }
   debounce();
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 
