@@ -274,22 +274,26 @@ void loop() {
 
 
 void setupWifi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pass);
-  while (WiFi.status() != WL_CONNECTED) {
-    wifiCount++;
-    if (wifiCount > WIFI_TIMEOUT) {
-      wifiCount = 0;
-      log("E/ntp   : wifi timeout");
-      display.set("ERR4");
-      display.show(3000);
-      return;
-    } else {
-      display.set("WIFI");
-      display.show();
+  if (WiFi.status() == WL_CONNECTED) {
+    log("I/wifi  : wifi connected already");
+  } else {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, pass);
+    while (WiFi.status() != WL_CONNECTED) {
+      wifiCount++;
+      if (wifiCount > WIFI_TIMEOUT) {
+        wifiCount = 0;
+        log("E/wifi  : wifi timeout");
+        display.set("ERR4");
+        display.show(3000);
+        return;
+      } else {
+        display.set("WIFI");
+        display.show();
+      }
     }
+    log("I/wifi  : wifi connected. IP address: " + WiFi.localIP().toString());
   }
-  log("I/wifi  : WiFi connected. IP address: " + WiFi.localIP().toString());
 }
 
 
