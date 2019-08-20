@@ -9,19 +9,12 @@
 #include <ESP8266httpUpdate.h>
 #include "Secrets.h"
 
-/*
-Secrets.h file should contain data as below:
-#define STASSID "your-ssid" // your network SSID (name)
-#define STAPSK "your-password" // your network password
-*/
+/* Secrets.h file should contain data as below: */
 #ifndef STA_SSID
 #define STA_SSID "your-ssid" // your network SSID (name)
 #define STA_PSK  "your-password" // your network password
 #define OTA_HOSTNAME "ArduinoClock" // desired hostname for OTA
 #endif
-
-const char* ssid = STA_SSID;
-const char* pass = STA_PSK;
 
 /* Configurable variables */
 #define TICK_PIN D5
@@ -278,7 +271,7 @@ void setupWifi() {
     log("I/wifi  : wifi connected already");
   } else {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, pass);
+    WiFi.begin(STA_SSID, STA_PSK);
     while (WiFi.status() != WL_CONNECTED) {
       wifiCount++;
       if (wifiCount > WIFI_TIMEOUT) {
