@@ -268,7 +268,7 @@ void loop() {
 
 void setupWifi() {
   if (WiFi.status() == WL_CONNECTED) {
-    log("I/wifi  : wifi connected already");
+    log("I/wifi  : wifi connected already. IP address: " + WiFi.localIP().toString());
   } else {
     WiFi.mode(WIFI_STA);
     WiFi.begin(STA_SSID, STA_PSK);
