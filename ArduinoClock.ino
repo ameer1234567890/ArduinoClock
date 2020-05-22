@@ -5,6 +5,9 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <TelnetStream.h>
 #include <ArduinoOTA.h>
 #include <ESP8266httpUpdate.h>
 #include "Secrets.h"
@@ -67,6 +70,7 @@ eepromData alarmDataOld;
 
 WiFiUDP udp;
 RTC_DS1307 rtc;
+HTTPClient http;
 WiFiClient wClient;
 IPAddress timeServerIP;
 ESP8266WebServer server(SERVER_PORT);
@@ -74,11 +78,12 @@ ShiftDisplay2 display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE
 
 
 void setup() {
+  TelnetStream.begin();
   log("I/system: startup");
   pinMode(TICK_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   if (digitalRead(BUTTON_PIN) == LOW) {
-    runHTTPUpdate();
+    runHTTPUpdate(true);
   }
   if (!rtc.begin()) {
     display.set("ERR1");
@@ -106,6 +111,7 @@ void setup() {
       "<a href=\"/cancelalarm\">/cancelalarm</a><br>"\
       "<a href=\"/dismissalarm\">/dismissalarm</a><br>"\
       "<a href=\"/otaupdate\">/otaupdate</a><br>"\
+      "<a href=\"/covid19info\">/covid19info</a><br>"\
       "<br><p><small>"\
       "Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a> | "\
       "Chip ID: " + String(ESP.getChipId()) + \
@@ -145,8 +151,9 @@ void setup() {
   server.on("/otaupdate", []() {
     server.send(200, "text/plain", "HTTP OTA update started");
     log("I/system: ota update started upon request from " + server.client().remoteIP().toString());
-    runHTTPUpdate();
+    runHTTPUpdate(false);
   });
+  server.on("/covid19info", showCOVIDCases);
   server.begin();
 
   ArduinoOTA.setHostname(OTA_HOSTNAME);
@@ -263,6 +270,24 @@ void loop() {
   ArduinoOTA.handle();
 
   stopCountdown = false; // this is to avoid countdown being unable to start
+
+  switch (TelnetStream.read()) {
+    case 'R':
+      TelnetStream.println("Rebooting device");
+      TelnetStream.stop();
+      delay(100);
+      ESP.reset();
+      break;
+    case 'C':
+      TelnetStream.println("Closing telnet connection");
+      TelnetStream.flush();
+      TelnetStream.stop();
+      break;
+    case 'S':
+      TelnetStream.println("Synchronizing clock");
+      syncntp();
+      break;
+  }
 }
 
 
@@ -291,6 +316,7 @@ void setupWifi() {
 
 
 void log(String msg) {
+  TelnetStream.println("[" + logTime + "] " + msg);
   logMsg = logMsg + "[" + logTime + "] ";
   logMsg = logMsg + msg + "\n";
 }
@@ -373,12 +399,12 @@ void debounce() {
 }
 
 
-void runHTTPUpdate() {
+void runHTTPUpdate(bool reboot) {
   log("I/updatr: HTTP OTA update started");
   display.set("OTA ");
   display.show(3000);
   setupWifi();
-  ESPhttpUpdate.rebootOnUpdate(false);
+  ESPhttpUpdate.rebootOnUpdate(reboot);
   display.set("UPDT");
   display.show(1000);
   ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
@@ -541,4 +567,29 @@ void doAlarm() {
   debounce();
   delay(3000);
   log("I/alarm : completed doAlarm");
+}
+
+
+void showCOVIDCases() {
+  server.send(200, "text/plain", "Showing COVID19 information");
+  log("I/covid : COVID19 information shown upon request from " + server.client().remoteIP().toString());
+  display.set("COVD");
+  display.show(2000);
+  http.begin(wClient, "http://192.168.100.71/covid/");
+  int httpCode = http.GET();
+  String httpResponse = http.getString();
+  http.end();
+  if (httpCode == HTTP_CODE_OK && httpResponse != "") {
+    int startIndex = httpResponse.indexOf("<div class=\"covid_major_value\">") + 31;
+    int endIndex = httpResponse.indexOf("</div>", startIndex);
+    String casesToday = httpResponse.substring(startIndex, endIndex);
+    casesToday.replace(",", "");
+    log("I/covid : covid-19 positive cases now => " + casesToday);
+    display.set(casesToday);
+    display.show(5000);
+  } else {
+    log("E/covid : invalid HTTP response. HTTP code => " + String(httpCode));
+    display.set("ERR7");
+    display.show(2000);
+  }
 }
