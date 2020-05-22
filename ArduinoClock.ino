@@ -1,13 +1,13 @@
 #include <Wire.h>
-#include <RTClib.h>
+#include <RTClib.h> // https://github.com/adafruit/RTClib
 #include <EEPROM.h>
-#include <ShiftDisplay2.h>
+#include <ShiftDisplay2.h> // https://github.com/ameer1234567890/ShiftDisplay2
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <TelnetStream.h>
+#include <TelnetStream.h> // https://github.com/jandrassy/TelnetStream
 #include <ArduinoOTA.h>
 #include <ESP8266httpUpdate.h>
 #include "Secrets.h"

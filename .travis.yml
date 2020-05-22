@@ -16,6 +16,7 @@ before_install:
   - arduino-cli core install esp8266:esp8266
   - arduino-cli lib install "ShiftDisplay2"
   - arduino-cli lib install "RTClib"
+  - git clone https://github.com/jandrassy/TelnetStream $HOME/Arduino/libraries/TelnetStream
   - touch Secrets.h
 script:
   - arduino-cli compile --fqbn esp8266:esp8266:d1_mini $PWD/ArduinoClock.ino
