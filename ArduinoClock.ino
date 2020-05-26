@@ -243,7 +243,7 @@ void loop() {
     chimed = false;
   }
 
-  if (millis() > INIT_SYNC && !synced && AUTO_SYNC && millis() > (lastTimeInitSync + INIT_SYNC)) {
+  if (millis() > INIT_SYNC && !synced && AUTO_SYNC && millis() - lastTimeInitSync > INIT_SYNC) {
     lastTimeInitSync = millis();
     log("I/system: running auto sync via NTP");
     syncntp();
@@ -411,7 +411,7 @@ void runHTTPUpdate(bool reboot) {
   HTTPUpdateResult ret = ESPhttpUpdate.update(wClient, OTA_URL);
   switch(ret) {
     case HTTP_UPDATE_FAILED:
-      log("E/updatr: HTTP OTA update failed");
+      log("E/updatr: HTTP OTA update failed " + String(ESPhttpUpdate.getLastError()) + " " + ESPhttpUpdate.getLastErrorString());
       display.set("ERR6");
       display.show(3000);
       break;
