@@ -36,7 +36,7 @@ const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
 const bool HOURLY_CHIME = false; // true for a chime at the start of every hour
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
-const String OTA_URL = "http://192.168.100.44/ArduinoClock/ArduinoClock.ino.bin"; // HTTP OTA update URL
+const String OTA_URL = "http://miwifimini.lan/Arduino/ArduinoClock.ino.bin"; // HTTP OTA update URL
 
 /* Do not change unless you know what you are doing */
 String logMsg;

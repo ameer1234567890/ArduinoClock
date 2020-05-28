@@ -6,7 +6,7 @@
         {
             "label": "Deploy Binary",
             "type": "shell",
-            "command": "cp .vscode/build/ArduinoClock.ino.bin /n/ArduinoClock/",
+            "command": "cp .vscode/build/ArduinoClock.ino.bin /n/.data/Arduino/",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
