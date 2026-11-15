@@ -1,12 +1,12 @@
 #include <Wire.h>
-#include <RTClib.h> // https://github.com/adafruit/RTClib
+#include <RTClib.h> // https://github.com/adafruit/RTClib (Also install Adafruit BusIO https://github.com/adafruit/Adafruit_BusIO)
 #include <EEPROM.h>
 #include <ShiftDisplay2.h> // https://github.com/ameer1234567890/ShiftDisplay2
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
-#include <TelnetStream.h> // https://github.com/jandrassy/TelnetStream
+#include <TelnetStream2.h> // https://github.com/ameer1234567890/TelnetStream2
 #include <ArduinoOTA.h>
 #include <ESP8266httpUpdate.h>
 #include "Secrets.h"
@@ -36,7 +36,7 @@ const int WIFI_TIMEOUT = 3000; // Wifi connect timeout interval
 const bool HOURLY_CHIME = false; // true for a chime at the start of every hour
 const bool LEADING_ZEROS = true; // true for leading zeros
 const bool MILITARY_TIME = false; // true for 24 hour clock
-const String OTA_URL = "http://miwifimini.lan/Arduino/ArduinoClock.ino.bin"; // HTTP OTA update URL
+const String OTA_URL = "http://guava.lan/Arduino/ArduinoClock.ino.bin"; // HTTP OTA update URL
 
 /* Do not change unless you know what you are doing */
 String logMsg;
@@ -77,8 +77,9 @@ ShiftDisplay2 display(LATCH_PIN, CLOCK_PIN, DATA_PIN, DISPLAY_TYPE, DISPLAY_SIZE
 
 
 void setup() {
-  TelnetStream.begin();
+  TelnetStream2.begin();
   log("I/system: startup");
+  log("I/system: compiled on " __DATE__ " at " __TIME__);
   pinMode(TICK_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   if (digitalRead(BUTTON_PIN) == LOW) {
@@ -86,9 +87,12 @@ void setup() {
   }
   if (!rtc.begin()) {
     display.set("ERR1");
-    while (true) {
+    unsigned long startTime = millis();
+    unsigned long duration = 5000;
+    while (millis() - startTime < duration) {
       display.show();
     }
+    ESP.restart();
   }
 
   if (!rtc.isrunning()) {
@@ -110,7 +114,7 @@ void setup() {
       "<a href=\"/cancelalarm\">/cancelalarm</a><br>"\
       "<a href=\"/dismissalarm\">/dismissalarm</a><br>"\
       "<a href=\"/otaupdate\">/otaupdate</a><br>"\
-      "<a href=\"/covid19info\">/covid19info</a><br>"\
+      "<a href=\"/errorcodes\">/errorcodes</a><br>"\
       "<br><p><small>"\
       "Powered by: <a href=\"https://github.com/ameer1234567890/ArduinoClock\">ArduinoClock</a> | "\
       "Chip ID: " + String(ESP.getChipId()) + " | " + \
@@ -153,7 +157,7 @@ void setup() {
     log("I/system: ota update started upon request from " + server.client().remoteIP().toString());
     runHTTPUpdate(false);
   });
-  server.on("/covid19info", showCOVIDCases);
+  server.on("/errorcodes", showErrorCodes);
   server.begin();
 
   ArduinoOTA.setHostname(OTA_HOSTNAME);
@@ -271,20 +275,20 @@ void loop() {
 
   stopCountdown = false; // this is to avoid countdown being unable to start
 
-  switch (TelnetStream.read()) {
+  switch (TelnetStream2.read()) {
     case 'R':
-      TelnetStream.println("Rebooting device");
-      TelnetStream.stop();
+      TelnetStream2.println("Rebooting device");
+      TelnetStream2.stop();
       delay(100);
       ESP.restart();
       break;
     case 'C':
-      TelnetStream.println("Closing telnet connection");
-      TelnetStream.flush();
-      TelnetStream.stop();
+      TelnetStream2.println("Closing telnet connection");
+      TelnetStream2.flush();
+      TelnetStream2.stop();
       break;
     case 'S':
-      TelnetStream.println("Synchronizing clock");
+      TelnetStream2.println("Synchronizing clock");
       syncntp();
       break;
   }
@@ -316,7 +320,7 @@ void setupWifi() {
 
 
 void log(String msg) {
-  TelnetStream.println("[" + logTime + "] " + msg);
+  TelnetStream2.println("[" + logTime + "] " + msg);
   logMsg = logMsg + "[" + logTime + "] ";
   logMsg = logMsg + msg + "\n";
 }
@@ -356,7 +360,7 @@ void syncntp() {
 }
 
 
-unsigned long sendNTPpacket(IPAddress& address) {
+void sendNTPpacket(IPAddress& address) {
   memset(packetBuffer, 0, ntpPacketSize);
   packetBuffer[0] = 0b11100011;
   packetBuffer[1] = 0;
@@ -570,26 +574,7 @@ void doAlarm() {
 }
 
 
-void showCOVIDCases() {
-  server.send(200, "text/plain", "Showing COVID19 information");
-  log("I/covid : COVID19 information shown upon request from " + server.client().remoteIP().toString());
-  display.set("COVD");
-  display.show(2000);
-  http.begin(wClient, "http://192.168.100.71/covid/");
-  int httpCode = http.GET();
-  String httpResponse = http.getString();
-  http.end();
-  if (httpCode == HTTP_CODE_OK && httpResponse != "") {
-    int startIndex = httpResponse.indexOf("<div class=\"covid_major_value\">") + 31;
-    int endIndex = httpResponse.indexOf("</div>", startIndex);
-    String casesToday = httpResponse.substring(startIndex, endIndex);
-    casesToday.replace(",", "");
-    log("I/covid : covid-19 positive cases now => " + casesToday);
-    display.set(casesToday);
-    display.show(5000);
-  } else {
-    log("E/covid : invalid HTTP response. HTTP code => " + String(httpCode));
-    display.set("ERR7");
-    display.show(2000);
-  }
+void showErrorCodes() {
+  server.send(200, "text/plain", "Error Codes\n............\nERR1 : Unable to access RTC\nERR2 : RTC is not running\n");
+  log("I/error : Error codes shown upon request from " + server.client().remoteIP().toString());
 }
