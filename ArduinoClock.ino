@@ -575,6 +575,6 @@ void doAlarm() {
 
 
 void showErrorCodes() {
-  server.send(200, "text/plain", "Error Codes\n............\nERR1 : Unable to access RTC\nERR2 : RTC is not running\n");
+  server.send(200, "text/plain", "Error Codes\n............\nERR1 : Unable to access RTC\nERR2 : RTC is not running\nERR4 : Wifi timeout\nERR5 : NTP packet empty\nERR6 : OTA update failed\n");
   log("I/error : Error codes shown upon request from " + server.client().remoteIP().toString());
 }
